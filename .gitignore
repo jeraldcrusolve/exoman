@@ -1,0 +1,15 @@
+# Windows / PowerShell
+Thumbs.db
+Desktop.ini
+*.lnk
+
+# PowerShell session files
+*.pssc
+*.cdxml
+
+# VS Code
+.vscode/
+
+# Logs / temp
+*.log
+*.tmp
