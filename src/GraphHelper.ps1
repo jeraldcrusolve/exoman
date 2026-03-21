@@ -107,7 +107,7 @@ function Import-GraphModules {
 
 function Connect-MigrazeGraph {
     try {
-        # ── Step 1: Ensure ExchangeOnlineManagement is installed ──────────────
+        # Ensure ExchangeOnlineManagement is installed
         $exoMissing = @($script:RequiredEXOModules | Where-Object {
             -not (Get-Module -ListAvailable -Name $_ -ErrorAction SilentlyContinue)
         })
@@ -116,52 +116,23 @@ function Connect-MigrazeGraph {
             Install-Module -Name "ExchangeOnlineManagement" -Scope CurrentUser -Force -AllowClobber -Repository PSGallery -ErrorAction Stop
             Write-MigrazeLog "ExchangeOnlineManagement installed." "Success"
         }
-
-        # ── Step 2: Ensure Microsoft.Graph modules are installed ──────────────
-        $missing = Test-GraphModules
-        if ($missing.Count -gt 0) {
-            Write-MigrazeLog "Missing required modules: $($missing -join ', ')" "Warning"
-            $answer = [System.Windows.MessageBox]::Show(
-                "The following modules are required but not installed:`n`n$($missing -join "`n")`n`nInstall them now? (Requires internet access)",
-                "Migraze - Missing Modules",
-                [System.Windows.MessageBoxButton]::YesNo,
-                [System.Windows.MessageBoxImage]::Question
-            )
-            if ($answer -ne [System.Windows.MessageBoxResult]::Yes) { throw "Required modules not installed." }
-            Install-GraphModules -Modules $missing
-        }
-
-        # ── Step 3: Import EXO FIRST so its MSAL wins the AppDomain race ─────
-        Write-MigrazeLog "Loading modules..." "Info"
         Import-Module ExchangeOnlineManagement -Force -ErrorAction SilentlyContinue
-
-        # ── Step 4: Connect to Exchange Online (browser prompt) ───────────────
         Write-MigrazeLog "Opening browser for Microsoft 365 authentication..." "Action"
         Connect-ExchangeOnline -ShowBanner:$false -ErrorAction Stop
-        $exoInfo = Get-ConnectionInformation -ErrorAction SilentlyContinue
-        $upn = if ($exoInfo) { $exoInfo.UserPrincipalName } else { $null }
-        $script:IsEXOConnected = $true
-        Write-MigrazeLog "Connected to Exchange Online$(if ($upn) { " as $upn" })." "Success"
-
-        # ── Step 5: Connect to Graph (SSO reuses cached AAD token) ────────────
-        foreach ($m in $script:RequiredModules) {
-            Import-Module $m -Force -ErrorAction SilentlyContinue
-        }
-        Write-MigrazeLog "Connecting to Microsoft Graph..." "Action"
-        Connect-MgGraph -Scopes $script:GraphScopes -NoWelcome -ErrorAction Stop
-        $ctx = Get-MgContext
-        if ($ctx -and $ctx.Account) {
+        $exoInfo = Get-ConnectionInformation -ErrorAction Stop
+        if ($exoInfo -and $exoInfo.UserPrincipalName) {
             $script:IsGraphConnected = $true
-            $script:GraphAccount     = $ctx.Account
-            $script:GraphTenantId    = $ctx.TenantId
-            Write-MigrazeLog "Connected to Microsoft Graph." "Success"
-            return @{ Success = $true; Account = $ctx.Account; TenantId = $ctx.TenantId }
+            $script:IsEXOConnected   = $true
+            $script:GraphAccount     = $exoInfo.UserPrincipalName
+            $script:GraphTenantId    = $exoInfo.TenantID
+            Write-MigrazeLog "Connected to Microsoft 365 as $($exoInfo.UserPrincipalName)." "Success"
+            return @{ Success = $true; Account = $exoInfo.UserPrincipalName; TenantId = $exoInfo.TenantID }
         }
-        throw "Graph login completed but no session context found."
+        throw "Login completed but no Exchange Online session found."
     } catch {
         $script:IsGraphConnected = $false
-        $script:GraphAccount     = $null
         $script:IsEXOConnected   = $false
+        $script:GraphAccount     = $null
         Write-MigrazeLog "M365 connection error: $($_.Exception.Message)" "Error"
         return @{ Success = $false; Error = $_.Exception.Message }
     }
@@ -202,11 +173,10 @@ function Connect-MigrazeTargetGraph {
 
 function Disconnect-MigrazeGraph {
     try { Disconnect-ExchangeOnline -Confirm:$false -ErrorAction SilentlyContinue } catch {}
-    try { Disconnect-MgGraph -ErrorAction SilentlyContinue } catch {}
     $script:IsGraphConnected = $false
+    $script:IsEXOConnected   = $false
     $script:GraphAccount     = $null
     $script:GraphTenantId    = $null
-    $script:IsEXOConnected   = $false
     Write-MigrazeLog "Disconnected from Microsoft 365." "Info"
 }
 
@@ -219,15 +189,18 @@ function Disconnect-MigrazeTargetGraph {
 
 function Get-MigrazeConnectionStatus {
     try {
-        $ctx = Get-MgContext
-        if ($ctx -and $ctx.Account) {
+        Import-Module ExchangeOnlineManagement -Force -ErrorAction SilentlyContinue
+        $exoInfo = Get-ConnectionInformation -ErrorAction SilentlyContinue
+        if ($exoInfo -and $exoInfo.State -eq "Connected" -and $exoInfo.UserPrincipalName) {
             $script:IsGraphConnected = $true
-            $script:GraphAccount     = $ctx.Account
-            $script:GraphTenantId    = $ctx.TenantId
-            return @{ Connected = $true; Account = $ctx.Account; TenantId = $ctx.TenantId }
+            $script:IsEXOConnected   = $true
+            $script:GraphAccount     = $exoInfo.UserPrincipalName
+            $script:GraphTenantId    = $exoInfo.TenantID
+            return @{ Connected = $true; Account = $exoInfo.UserPrincipalName; TenantId = $exoInfo.TenantID }
         }
     } catch {}
     $script:IsGraphConnected = $false
+    $script:IsEXOConnected   = $false
     return @{ Connected = $false }
 }
 
@@ -395,11 +368,19 @@ function Get-DGProperties {
 function Search-MigrazeUsers {
     param([string]$Query)
     try {
-        Import-GraphModules
+        Invoke-EXOCommand
         Write-MigrazeLog "Searching users matching '$Query'..." "Action"
-        $filter = "startsWith(displayName,'$Query') or startsWith(userPrincipalName,'$Query')"
-        $users  = Get-MgUser -Filter $filter -Top 30 `
-            -Property "Id,DisplayName,UserPrincipalName,Mail" -ErrorAction Stop
+        $recipients = Get-Recipient `
+            -Filter "DisplayName -like '*$Query*' -or PrimarySmtpAddress -like '*$Query*'" `
+            -RecipientTypeDetails UserMailbox -ResultSize 30 -ErrorAction Stop
+        $users = @($recipients | ForEach-Object {
+            [PSCustomObject]@{
+                Id                = $_.PrimarySmtpAddress
+                DisplayName       = $_.DisplayName
+                UserPrincipalName = $_.PrimarySmtpAddress
+                Mail              = $_.PrimarySmtpAddress
+            }
+        })
         Write-MigrazeLog "Found $($users.Count) user(s) matching '$Query'." "Success"
         return @{ Success = $true; Users = $users }
     } catch {
@@ -408,53 +389,13 @@ function Search-MigrazeUsers {
     }
 }
 
-function Search-MigrazeUsers { param([string]$Query); Search-MigrazeUsers -Query $Query }
 function Connect-MigrazeTargetGraph {
-    <#
-    .SYNOPSIS Opens a browser-based Microsoft 365 login for the target tenant.
-    #>
-    try {
-        $missing = Test-GraphModules
-        if ($missing.Count -gt 0) {
-            Write-MigrazeLog "Missing required modules: $($missing -join ', ')" "Warning"
-            $answer = [System.Windows.MessageBox]::Show(
-                "The following modules are required but not installed:`n`n$($missing -join "`n")`n`nInstall them now? (Requires internet access)",
-                "Migraze - Missing Modules",
-                [System.Windows.MessageBoxButton]::YesNo,
-                [System.Windows.MessageBoxImage]::Question
-            )
-            if ($answer -ne [System.Windows.MessageBoxResult]::Yes) {
-                throw "Required modules not installed."
-            }
-            Install-GraphModules -Modules $missing
-        }
-
-        Write-MigrazeLog "Loading Microsoft Graph modules for target tenant..." "Info"
-        Import-GraphModules
-
-        Write-MigrazeLog "Opening browser for Target Tenant Microsoft 365 authentication..." "Action"
-        Connect-MgGraph -Scopes $script:GraphScopes -NoWelcome -ErrorAction Stop
-
-        $ctx = Get-MgContext
-        if ($ctx -and $ctx.Account) {
-            $script:IsTargetGraphConnected = $true
-            $script:TargetGraphAccount     = $ctx.Account
-            $script:TargetGraphTenantId    = $ctx.TenantId
-            Write-MigrazeLog "Target tenant Graph connection established." "Success"
-            return @{ Success = $true; Account = $ctx.Account; TenantId = $ctx.TenantId }
-        }
-        throw "Login completed but no session context found."
-
-    } catch {
-        $script:IsTargetGraphConnected = $false
-        $script:TargetGraphAccount     = $null
-        Write-MigrazeLog "Target connection error: $($_.Exception.Message)" "Error"
-        return @{ Success = $false; Error = $_.Exception.Message }
-    }
+    # Reserved for future M365-to-M365 migration scenario
+    Write-MigrazeLog "Target tenant connection not yet implemented." "Warning"
+    return @{ Success = $false; Error = "Not implemented." }
 }
 
 function Disconnect-MigrazeTargetGraph {
-    try { Disconnect-MgGraph -ErrorAction SilentlyContinue } catch {}
     $script:IsTargetGraphConnected = $false
     $script:TargetGraphAccount     = $null
     $script:TargetGraphTenantId    = $null
