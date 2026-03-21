@@ -24,6 +24,9 @@ $script:RequiredModules = @(
     "Microsoft.Graph.Users"
 )
 
+$script:RequiredEXOModules = @("ExchangeOnlineManagement")
+$script:IsEXOConnected = $false
+
 $script:LogBox        = $null
 $script:LogEntryCount = 0
 $script:LogCountLabel = $null
@@ -123,13 +126,27 @@ function Connect-MigrazeGraph {
             $script:IsGraphConnected = $true
             $script:GraphAccount     = $ctx.Account
             $script:GraphTenantId    = $ctx.TenantId
-            Write-MigrazeLog "Connected to Microsoft 365." "Success"
+            Write-MigrazeLog "Connected to Microsoft 365 (Graph)." "Success"
+
+            # Also connect Exchange Online using the same account
+            $exoMissing = @($script:RequiredEXOModules | Where-Object { -not (Get-Module -ListAvailable -Name $_ -ErrorAction SilentlyContinue) })
+            if ($exoMissing.Count -gt 0) {
+                Write-MigrazeLog "Installing ExchangeOnlineManagement module..." "Action"
+                Install-Module -Name "ExchangeOnlineManagement" -Scope CurrentUser -Force -AllowClobber -Repository PSGallery -ErrorAction Stop
+            }
+            Import-Module ExchangeOnlineManagement -Force -ErrorAction SilentlyContinue
+            Write-MigrazeLog "Connecting to Exchange Online ($($ctx.Account))..." "Action"
+            Connect-ExchangeOnline -UserPrincipalName $ctx.Account -ShowBanner:$false -ErrorAction Stop
+            $script:IsEXOConnected = $true
+            Write-MigrazeLog "Connected to Exchange Online." "Success"
+
             return @{ Success = $true; Account = $ctx.Account; TenantId = $ctx.TenantId }
         }
         throw "Login completed but no session context found."
     } catch {
         $script:IsGraphConnected = $false
         $script:GraphAccount     = $null
+        $script:IsEXOConnected   = $false
         Write-MigrazeLog "M365 connection error: $($_.Exception.Message)" "Error"
         return @{ Success = $false; Error = $_.Exception.Message }
     }
@@ -169,10 +186,12 @@ function Connect-MigrazeTargetGraph {
 }
 
 function Disconnect-MigrazeGraph {
+    try { Disconnect-ExchangeOnline -Confirm:$false -ErrorAction SilentlyContinue } catch {}
     try { Disconnect-MgGraph -ErrorAction SilentlyContinue } catch {}
     $script:IsGraphConnected = $false
     $script:GraphAccount     = $null
     $script:GraphTenantId    = $null
+    $script:IsEXOConnected   = $false
     Write-MigrazeLog "Disconnected from Microsoft 365." "Info"
 }
 
@@ -197,29 +216,37 @@ function Get-MigrazeConnectionStatus {
     return @{ Connected = $false }
 }
 
-# ---- Distribution Group operations ----------------------------------------
+# ---- Distribution Group operations (Exchange Online PowerShell) ------------
+
+function Invoke-EXOCommand {
+    # Ensure EXO module is imported before DG operations
+    Import-Module ExchangeOnlineManagement -Force -ErrorAction SilentlyContinue
+}
 
 function Get-DGList {
     param([string]$SearchQuery = "")
     try {
-        Import-GraphModules
+        Invoke-EXOCommand
         if ($SearchQuery) {
             Write-MigrazeLog "Searching distribution groups: '$SearchQuery'..." "Action"
-            $filter = "mailEnabled eq true and (startsWith(displayName,'$SearchQuery') or startsWith(mail,'$SearchQuery'))"
+            $dgs = Get-DistributionGroup -Filter "DisplayName -like '*$SearchQuery*' -or PrimarySmtpAddress -like '*$SearchQuery*'" `
+                -ResultSize 50 -ErrorAction Stop
         } else {
             Write-MigrazeLog "Fetching distribution groups..." "Action"
-            $filter = "mailEnabled eq true"
+            $dgs = Get-DistributionGroup -ResultSize 50 -ErrorAction Stop
         }
-        $groups = Get-MgGroup -Filter $filter -Top 50 `
-            -Property "Id,DisplayName,Mail,Description,MailNickname,MailEnabled,SecurityEnabled,CreatedDateTime,GroupTypes" `
-            -ErrorAction Stop
-        # Exclude Unified (M365 Groups) and Dynamic groups client-side
-        $dgs = @($groups | Where-Object {
-            ($_.GroupTypes -eq $null -or $_.GroupTypes.Count -eq 0) -or
-            ($_.GroupTypes -notcontains 'Unified' -and $_.GroupTypes -notcontains 'DynamicMembership')
+        $normalized = @($dgs | ForEach-Object {
+            [PSCustomObject]@{
+                Id          = $_.PrimarySmtpAddress
+                DisplayName = $_.DisplayName
+                Mail        = $_.PrimarySmtpAddress
+                Alias       = $_.Alias
+                Description = $_.Notes
+                ToString    = "$($_.DisplayName)  <$($_.PrimarySmtpAddress)>"
+            }
         })
-        Write-MigrazeLog "Found $($dgs.Count) distribution group(s)." "Success"
-        return @{ Success = $true; Groups = $dgs }
+        Write-MigrazeLog "Found $($normalized.Count) distribution group(s)." "Success"
+        return @{ Success = $true; Groups = $normalized }
     } catch {
         Write-MigrazeLog "Get-DGList failed: $($_.Exception.Message)" "Error"
         return @{ Success = $false; Error = $_.Exception.Message }
@@ -228,23 +255,23 @@ function Get-DGList {
 
 function Get-AllDGsForDiscovery {
     try {
-        Import-GraphModules
-        Write-MigrazeLog "Discovering distribution groups — fetching mail-enabled groups..." "Action"
-
-        # Use simple mailEnabled filter (no lambda operators = no ConsistencyLevel needed)
-        # GroupTypes is fetched so we can filter M365/Dynamic groups client-side
-        $allMailEnabled = Get-MgGroup -Filter "mailEnabled eq true" -All `
-            -Property "Id,DisplayName,Mail,Description,MailNickname,MailEnabled,SecurityEnabled,CreatedDateTime,GroupTypes" `
-            -ErrorAction Stop
-
-        # Classic DGs: mail-enabled, not Unified (M365 Group), not Dynamic
-        $dgs = @($allMailEnabled | Where-Object {
-            ($_.GroupTypes -eq $null -or $_.GroupTypes.Count -eq 0) -or
-            ($_.GroupTypes -notcontains 'Unified' -and $_.GroupTypes -notcontains 'DynamicMembership')
-        } | Where-Object { $_.MailEnabled -eq $true })
-
-        Write-MigrazeLog "Discovery complete. Found $($dgs.Count) distribution group(s) out of $($allMailEnabled.Count) mail-enabled groups." "Success"
-        return @{ Success = $true; Groups = $dgs }
+        Invoke-EXOCommand
+        Write-MigrazeLog "Discovering all distribution groups in tenant..." "Action"
+        $dgs = Get-DistributionGroup -ResultSize Unlimited -ErrorAction Stop
+        $normalized = @($dgs | ForEach-Object {
+            [PSCustomObject]@{
+                Id              = $_.PrimarySmtpAddress
+                DisplayName     = $_.DisplayName
+                Mail            = $_.PrimarySmtpAddress
+                MailNickname    = $_.Alias
+                Alias           = $_.Alias
+                Description     = $_.Notes
+                SecurityEnabled = ($_.GroupType -match "Security")
+                MemberCount     = $_.GroupMemberCount
+            }
+        })
+        Write-MigrazeLog "Discovery complete. Found $($normalized.Count) distribution group(s)." "Success"
+        return @{ Success = $true; Groups = $normalized }
     } catch {
         Write-MigrazeLog "Discovery failed: $($_.Exception.Message)" "Error"
         return @{ Success = $false; Error = $_.Exception.Message }
@@ -259,18 +286,14 @@ function New-DGGroup {
         [bool]  $SecurityEnabled = $false
     )
     try {
-        Import-GraphModules
-        Write-MigrazeLog "Creating distribution group '$DisplayName' (alias: $MailNickname)..." "Action"
-        $body = @{
-            DisplayName     = $DisplayName
-            MailNickname    = $MailNickname
-            MailEnabled     = $true
-            SecurityEnabled = $SecurityEnabled
-            GroupTypes      = @()
+        Invoke-EXOCommand
+        $type = if ($SecurityEnabled) { "Security" } else { "Distribution" }
+        Write-MigrazeLog "Creating $type group '$DisplayName' (alias: $MailNickname)..." "Action"
+        $group = New-DistributionGroup -Name $DisplayName -Alias $MailNickname -Type $type -ErrorAction Stop
+        if ($Description) {
+            Set-DistributionGroup -Identity $group.PrimarySmtpAddress -Notes $Description -ErrorAction SilentlyContinue
         }
-        if ($Description) { $body.Description = $Description }
-        $group = New-MgGroup -BodyParameter $body -ErrorAction Stop
-        Write-MigrazeLog "Distribution group created. ID: $($group.Id)" "Success"
+        Write-MigrazeLog "Distribution group created: $($group.PrimarySmtpAddress)" "Success"
         return @{ Success = $true; Group = $group }
     } catch {
         Write-MigrazeLog "New-DGGroup failed: $($_.Exception.Message)" "Error"
@@ -281,12 +304,12 @@ function New-DGGroup {
 function Update-DGGroup {
     param([string]$GroupId, [string]$DisplayName, [string]$Description)
     try {
-        Import-GraphModules
-        Write-MigrazeLog "Updating group properties for ID: $GroupId..." "Action"
-        $body = @{}
-        if ($DisplayName)           { $body.DisplayName   = $DisplayName }
-        if ($null -ne $Description) { $body.Description   = $Description }
-        Update-MgGroup -GroupId $GroupId -BodyParameter $body -ErrorAction Stop
+        Invoke-EXOCommand
+        Write-MigrazeLog "Updating distribution group '$GroupId'..." "Action"
+        $params = @{ Identity = $GroupId; ErrorAction = "Stop" }
+        if ($DisplayName)           { $params.DisplayName = $DisplayName }
+        if ($null -ne $Description -and $Description -ne "") { $params.Notes = $Description }
+        Set-DistributionGroup @params
         Write-MigrazeLog "Group properties updated successfully." "Success"
         return @{ Success = $true }
     } catch {
@@ -298,10 +321,9 @@ function Update-DGGroup {
 function Add-DGMember {
     param([string]$GroupId, [string]$UserId)
     try {
-        Import-GraphModules
-        Write-MigrazeLog "Adding user $UserId to group $GroupId..." "Action"
-        $ref = @{ "@odata.id" = "https://graph.microsoft.com/v1.0/directoryObjects/$UserId" }
-        New-MgGroupMemberByRef -GroupId $GroupId -BodyParameter $ref -ErrorAction Stop
+        Invoke-EXOCommand
+        Write-MigrazeLog "Adding '$UserId' to group '$GroupId'..." "Action"
+        Add-DistributionGroupMember -Identity $GroupId -Member $UserId -ErrorAction Stop
         Write-MigrazeLog "Member added successfully." "Success"
         return @{ Success = $true }
     } catch {
@@ -313,9 +335,9 @@ function Add-DGMember {
 function Remove-DGMember {
     param([string]$GroupId, [string]$MemberId)
     try {
-        Import-GraphModules
-        Write-MigrazeLog "Removing member $MemberId from group $GroupId..." "Action"
-        Remove-MgGroupMemberByRef -GroupId $GroupId -DirectoryObjectId $MemberId -ErrorAction Stop
+        Invoke-EXOCommand
+        Write-MigrazeLog "Removing '$MemberId' from group '$GroupId'..." "Action"
+        Remove-DistributionGroupMember -Identity $GroupId -Member $MemberId -Confirm:$false -ErrorAction Stop
         Write-MigrazeLog "Member removed successfully." "Success"
         return @{ Success = $true }
     } catch {
@@ -327,15 +349,28 @@ function Remove-DGMember {
 function Get-DGProperties {
     param([string]$GroupId)
     try {
-        Import-GraphModules
-        Write-MigrazeLog "Loading properties for group ID: $GroupId..." "Action"
-        $group   = Get-MgGroup -GroupId $GroupId `
-            -Property "Id,DisplayName,Mail,Description,MailNickname,MailEnabled,SecurityEnabled,GroupTypes,CreatedDateTime,Visibility" `
-            -ErrorAction Stop
-        Write-MigrazeLog "Loading members for '$($group.DisplayName)'..." "Info"
-        $members = Get-MgGroupMember -GroupId $GroupId -All -ErrorAction Stop
-        Write-MigrazeLog "Loaded $($members.Count) member(s) for '$($group.DisplayName)'." "Success"
-        return @{ Success = $true; Group = $group; Members = $members }
+        Invoke-EXOCommand
+        Write-MigrazeLog "Loading properties for group: $GroupId..." "Action"
+        $dg = Get-DistributionGroup -Identity $GroupId -ErrorAction Stop
+        Write-MigrazeLog "Loading members for '$($dg.DisplayName)'..." "Info"
+        $members = Get-DistributionGroupMember -Identity $GroupId -ResultSize Unlimited -ErrorAction Stop
+        $normalizedMembers = @($members | ForEach-Object {
+            [PSCustomObject]@{
+                Id          = $_.PrimarySmtpAddress
+                DisplayName = $_.DisplayName
+                ToString    = "$($_.DisplayName)  ($($_.PrimarySmtpAddress))"
+            }
+        })
+        $normalizedGroup = [PSCustomObject]@{
+            Id              = $dg.PrimarySmtpAddress
+            DisplayName     = $dg.DisplayName
+            Mail            = $dg.PrimarySmtpAddress
+            Alias           = $dg.Alias
+            Description     = $dg.Notes
+            SecurityEnabled = ($dg.GroupType -match "Security")
+        }
+        Write-MigrazeLog "Loaded $($normalizedMembers.Count) member(s) for '$($dg.DisplayName)'." "Success"
+        return @{ Success = $true; Group = $normalizedGroup; Members = $normalizedMembers }
     } catch {
         Write-MigrazeLog "Get-DGProperties failed: $($_.Exception.Message)" "Error"
         return @{ Success = $false; Error = $_.Exception.Message }
