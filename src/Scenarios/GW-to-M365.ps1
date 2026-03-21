@@ -129,7 +129,7 @@ function Show-GWtoM365Window {
         <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto" Margin="16,12,16,12">
           <StackPanel>
             <TextBlock Text="DISCOVERY" FontSize="10" FontWeight="Bold"
-                       Foreground="#889AAA" Margin="0,0,0,10" LetterSpacing="1"/>
+                       Foreground="#889AAA" Margin="0,0,0,10"/>
             <Button x:Name="BtnDiscoverUsers"    Content="&#x1F465;  Discover Users"
                     Background="#2D6A4F" Style="{StaticResource ColBtn}"/>
             <Button x:Name="BtnDiscoverGroups"   Content="&#x1F4CB;  Discover Distribution Groups"
@@ -200,7 +200,7 @@ function Show-GWtoM365Window {
         <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto" Margin="16,12,16,12">
           <StackPanel>
             <TextBlock Text="CREATE / MIGRATE" FontSize="10" FontWeight="Bold"
-                       Foreground="#889AAA" Margin="0,0,0,10" LetterSpacing="1"/>
+                       Foreground="#889AAA" Margin="0,0,0,10"/>
             <Button x:Name="BtnCreateUsers"    Content="&#x1F465;  Create Users from Google"
                     Background="#0078D4" Style="{StaticResource ColBtn}"/>
             <Button x:Name="BtnCreateGroups"   Content="&#x1F4CB;  Create Distribution Groups"
@@ -208,7 +208,7 @@ function Show-GWtoM365Window {
             <Button x:Name="BtnCreateSharedMB" Content="&#x1F4EC;  Create Shared Mailboxes"
                     Background="#0078D4" Style="{StaticResource ColBtn}"/>
             <TextBlock Text="MANAGEMENT" FontSize="10" FontWeight="Bold"
-                       Foreground="#889AAA" Margin="0,12,0,10" LetterSpacing="1"/>
+                       Foreground="#889AAA" Margin="0,12,0,10"/>
             <Button x:Name="BtnManageDG"       Content="&#x2699;  Manage Distribution Groups"
                     Background="#106EBE" Style="{StaticResource ColBtn}"/>
             <Button x:Name="BtnManageSharedMB" Content="&#x2699;  Manage Shared Mailboxes"
