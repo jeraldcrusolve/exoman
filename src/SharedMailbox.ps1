@@ -1,4 +1,4 @@
-# SharedMailbox.ps1 - Shared Mailbox management window (coming soon)
+﻿# SharedMailbox.ps1 - Shared Mailbox management window (coming soon)
 
 function Show-SharedMailboxWindow {
     param([System.Windows.Window]$Owner)
