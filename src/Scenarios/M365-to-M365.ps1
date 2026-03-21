@@ -127,7 +127,7 @@ function Show-M365toM365Window {
         <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto" Margin="16,12,16,12">
           <StackPanel>
             <TextBlock Text="DISCOVERY" FontSize="10" FontWeight="Bold"
-                       Foreground="#889AAA" Margin="0,0,0,10" LetterSpacing="1"/>
+                       Foreground="#889AAA" Margin="0,0,0,10"/>
             <Button x:Name="BtnDiscSrcUsers"      Content="&#x1F465;  Discover Users"
                     Background="#455A64" Style="{StaticResource ColBtn}"/>
             <Button x:Name="BtnDiscSrcSecGroups"  Content="&#x1F512;  Discover Security Groups"
@@ -198,7 +198,7 @@ function Show-M365toM365Window {
         <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto" Margin="16,12,16,12">
           <StackPanel>
             <TextBlock Text="CREATE / MIGRATE" FontSize="10" FontWeight="Bold"
-                       Foreground="#889AAA" Margin="0,0,0,10" LetterSpacing="1"/>
+                       Foreground="#889AAA" Margin="0,0,0,10"/>
             <Button x:Name="BtnCreateTgtUsers"     Content="&#x1F465;  Create Users"
                     Background="#0078D4" Style="{StaticResource ColBtn}"/>
             <Button x:Name="BtnCreateTgtSecGroups" Content="&#x1F512;  Create Security Groups"
@@ -208,7 +208,7 @@ function Show-M365toM365Window {
             <Button x:Name="BtnCreateTgtSharedMBs" Content="&#x1F4EC;  Create Shared Mailboxes"
                     Background="#0078D4" Style="{StaticResource ColBtn}"/>
             <TextBlock Text="MANAGEMENT" FontSize="10" FontWeight="Bold"
-                       Foreground="#889AAA" Margin="0,12,0,10" LetterSpacing="1"/>
+                       Foreground="#889AAA" Margin="0,12,0,10"/>
             <Button x:Name="BtnManageTgtDG"        Content="&#x2699;  Manage Distribution Groups"
                     Background="#106EBE" Style="{StaticResource ColBtn}"/>
             <Button x:Name="BtnManageTgtSharedMB"  Content="&#x2699;  Manage Shared Mailboxes"
