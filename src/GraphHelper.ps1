@@ -98,6 +98,8 @@ function Install-GraphModules {
 }
 
 function Import-GraphModules {
+    # EXO must be imported before Graph to win the MSAL AppDomain race
+    Import-Module ExchangeOnlineManagement -Force -ErrorAction SilentlyContinue
     foreach ($m in $script:RequiredModules) {
         Import-Module $m -Force -ErrorAction SilentlyContinue
     }
@@ -105,6 +107,17 @@ function Import-GraphModules {
 
 function Connect-MigrazeGraph {
     try {
+        # ── Step 1: Ensure ExchangeOnlineManagement is installed ──────────────
+        $exoMissing = @($script:RequiredEXOModules | Where-Object {
+            -not (Get-Module -ListAvailable -Name $_ -ErrorAction SilentlyContinue)
+        })
+        if ($exoMissing.Count -gt 0) {
+            Write-MigrazeLog "Installing ExchangeOnlineManagement module..." "Action"
+            Install-Module -Name "ExchangeOnlineManagement" -Scope CurrentUser -Force -AllowClobber -Repository PSGallery -ErrorAction Stop
+            Write-MigrazeLog "ExchangeOnlineManagement installed." "Success"
+        }
+
+        # ── Step 2: Ensure Microsoft.Graph modules are installed ──────────────
         $missing = Test-GraphModules
         if ($missing.Count -gt 0) {
             Write-MigrazeLog "Missing required modules: $($missing -join ', ')" "Warning"
@@ -117,32 +130,34 @@ function Connect-MigrazeGraph {
             if ($answer -ne [System.Windows.MessageBoxResult]::Yes) { throw "Required modules not installed." }
             Install-GraphModules -Modules $missing
         }
-        Write-MigrazeLog "Loading Microsoft Graph modules..." "Info"
-        Import-GraphModules
+
+        # ── Step 3: Import EXO FIRST so its MSAL wins the AppDomain race ─────
+        Write-MigrazeLog "Loading modules..." "Info"
+        Import-Module ExchangeOnlineManagement -Force -ErrorAction SilentlyContinue
+
+        # ── Step 4: Connect to Exchange Online (browser prompt) ───────────────
         Write-MigrazeLog "Opening browser for Microsoft 365 authentication..." "Action"
+        Connect-ExchangeOnline -ShowBanner:$false -ErrorAction Stop
+        $exoInfo = Get-ConnectionInformation -ErrorAction SilentlyContinue
+        $upn = if ($exoInfo) { $exoInfo.UserPrincipalName } else { $null }
+        $script:IsEXOConnected = $true
+        Write-MigrazeLog "Connected to Exchange Online$(if ($upn) { " as $upn" })." "Success"
+
+        # ── Step 5: Connect to Graph (SSO reuses cached AAD token) ────────────
+        foreach ($m in $script:RequiredModules) {
+            Import-Module $m -Force -ErrorAction SilentlyContinue
+        }
+        Write-MigrazeLog "Connecting to Microsoft Graph..." "Action"
         Connect-MgGraph -Scopes $script:GraphScopes -NoWelcome -ErrorAction Stop
         $ctx = Get-MgContext
         if ($ctx -and $ctx.Account) {
             $script:IsGraphConnected = $true
             $script:GraphAccount     = $ctx.Account
             $script:GraphTenantId    = $ctx.TenantId
-            Write-MigrazeLog "Connected to Microsoft 365 (Graph)." "Success"
-
-            # Also connect Exchange Online using the same account
-            $exoMissing = @($script:RequiredEXOModules | Where-Object { -not (Get-Module -ListAvailable -Name $_ -ErrorAction SilentlyContinue) })
-            if ($exoMissing.Count -gt 0) {
-                Write-MigrazeLog "Installing ExchangeOnlineManagement module..." "Action"
-                Install-Module -Name "ExchangeOnlineManagement" -Scope CurrentUser -Force -AllowClobber -Repository PSGallery -ErrorAction Stop
-            }
-            Import-Module ExchangeOnlineManagement -Force -ErrorAction SilentlyContinue
-            Write-MigrazeLog "Connecting to Exchange Online ($($ctx.Account))..." "Action"
-            Connect-ExchangeOnline -UserPrincipalName $ctx.Account -ShowBanner:$false -ErrorAction Stop
-            $script:IsEXOConnected = $true
-            Write-MigrazeLog "Connected to Exchange Online." "Success"
-
+            Write-MigrazeLog "Connected to Microsoft Graph." "Success"
             return @{ Success = $true; Account = $ctx.Account; TenantId = $ctx.TenantId }
         }
-        throw "Login completed but no session context found."
+        throw "Graph login completed but no session context found."
     } catch {
         $script:IsGraphConnected = $false
         $script:GraphAccount     = $null
