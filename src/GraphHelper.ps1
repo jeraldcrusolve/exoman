@@ -205,16 +205,21 @@ function Get-DGList {
         Import-GraphModules
         if ($SearchQuery) {
             Write-MigrazeLog "Searching distribution groups: '$SearchQuery'..." "Action"
-            $filter = "mailEnabled eq true and NOT groupTypes/any(c:c eq 'Unified') and (startsWith(displayName,'$SearchQuery') or startsWith(mail,'$SearchQuery'))"
+            $filter = "mailEnabled eq true and (startsWith(displayName,'$SearchQuery') or startsWith(mail,'$SearchQuery'))"
         } else {
-            Write-MigrazeLog "Fetching all distribution groups..." "Action"
-            $filter = "mailEnabled eq true and NOT groupTypes/any(c:c eq 'Unified')"
+            Write-MigrazeLog "Fetching distribution groups..." "Action"
+            $filter = "mailEnabled eq true"
         }
         $groups = Get-MgGroup -Filter $filter -Top 50 `
-            -Property "Id,DisplayName,Mail,Description,MailNickname,MailEnabled,SecurityEnabled,CreatedDateTime" `
+            -Property "Id,DisplayName,Mail,Description,MailNickname,MailEnabled,SecurityEnabled,CreatedDateTime,GroupTypes" `
             -ErrorAction Stop
-        Write-MigrazeLog "Found $($groups.Count) distribution group(s)." "Success"
-        return @{ Success = $true; Groups = $groups }
+        # Exclude Unified (M365 Groups) and Dynamic groups client-side
+        $dgs = @($groups | Where-Object {
+            ($_.GroupTypes -eq $null -or $_.GroupTypes.Count -eq 0) -or
+            ($_.GroupTypes -notcontains 'Unified' -and $_.GroupTypes -notcontains 'DynamicMembership')
+        })
+        Write-MigrazeLog "Found $($dgs.Count) distribution group(s)." "Success"
+        return @{ Success = $true; Groups = $dgs }
     } catch {
         Write-MigrazeLog "Get-DGList failed: $($_.Exception.Message)" "Error"
         return @{ Success = $false; Error = $_.Exception.Message }
@@ -224,13 +229,22 @@ function Get-DGList {
 function Get-AllDGsForDiscovery {
     try {
         Import-GraphModules
-        Write-MigrazeLog "Discovering all distribution groups (paginating)..." "Action"
-        $filter = "mailEnabled eq true and NOT groupTypes/any(c:c eq 'Unified')"
-        $groups = Get-MgGroup -Filter $filter -All `
-            -Property "Id,DisplayName,Mail,Description,MailNickname,MailEnabled,SecurityEnabled,CreatedDateTime" `
+        Write-MigrazeLog "Discovering distribution groups — fetching mail-enabled groups..." "Action"
+
+        # Use simple mailEnabled filter (no lambda operators = no ConsistencyLevel needed)
+        # GroupTypes is fetched so we can filter M365/Dynamic groups client-side
+        $allMailEnabled = Get-MgGroup -Filter "mailEnabled eq true" -All `
+            -Property "Id,DisplayName,Mail,Description,MailNickname,MailEnabled,SecurityEnabled,CreatedDateTime,GroupTypes" `
             -ErrorAction Stop
-        Write-MigrazeLog "Discovery complete. Found $($groups.Count) distribution group(s)." "Success"
-        return @{ Success = $true; Groups = $groups }
+
+        # Classic DGs: mail-enabled, not Unified (M365 Group), not Dynamic
+        $dgs = @($allMailEnabled | Where-Object {
+            ($_.GroupTypes -eq $null -or $_.GroupTypes.Count -eq 0) -or
+            ($_.GroupTypes -notcontains 'Unified' -and $_.GroupTypes -notcontains 'DynamicMembership')
+        } | Where-Object { $_.MailEnabled -eq $true })
+
+        Write-MigrazeLog "Discovery complete. Found $($dgs.Count) distribution group(s) out of $($allMailEnabled.Count) mail-enabled groups." "Success"
+        return @{ Success = $true; Groups = $dgs }
     } catch {
         Write-MigrazeLog "Discovery failed: $($_.Exception.Message)" "Error"
         return @{ Success = $false; Error = $_.Exception.Message }
