@@ -1,4 +1,4 @@
-# GraphHelper.ps1 - Microsoft Graph authentication and shared utility functions
+﻿# GraphHelper.ps1 - Microsoft Graph authentication and shared utility functions
 
 $script:IsGraphConnected       = $false
 $script:GraphAccount           = $null
@@ -217,6 +217,22 @@ function Get-DGList {
         return @{ Success = $true; Groups = $groups }
     } catch {
         Write-MigrazeLog "Get-DGList failed: $($_.Exception.Message)" "Error"
+        return @{ Success = $false; Error = $_.Exception.Message }
+    }
+}
+
+function Get-AllDGsForDiscovery {
+    try {
+        Import-GraphModules
+        Write-MigrazeLog "Discovering all distribution groups (paginating)..." "Action"
+        $filter = "mailEnabled eq true and NOT groupTypes/any(c:c eq 'Unified')"
+        $groups = Get-MgGroup -Filter $filter -All `
+            -Property "Id,DisplayName,Mail,Description,MailNickname,MailEnabled,SecurityEnabled,CreatedDateTime" `
+            -ErrorAction Stop
+        Write-MigrazeLog "Discovery complete. Found $($groups.Count) distribution group(s)." "Success"
+        return @{ Success = $true; Groups = $groups }
+    } catch {
+        Write-MigrazeLog "Discovery failed: $($_.Exception.Message)" "Error"
         return @{ Success = $false; Error = $_.Exception.Message }
     }
 }
