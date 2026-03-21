@@ -1,22 +1,22 @@
-# DistributionGroups.ps1 - Distribution Group management (embedded in MainWindow)
+﻿# DistributionGroups.ps1 - Distribution Group management (embedded in MainWindow)
 
 function Initialize-DGView {
     param([System.Windows.Window]$window)
 
     # ── Resolve controls ──────────────────────────────────────────────────────
-    $navCreate        = $window.FindName("NavCreate")
-    $navUpdate        = $window.FindName("NavUpdate")
-    $navAddMembers    = $window.FindName("NavAddMembers")
-    $navRemoveMembers = $window.FindName("NavRemoveMembers")
-    $navReadProps     = $window.FindName("NavReadProps")
-    $navDiscover      = $window.FindName("NavDiscover")
+    $navCreate        = $script:mainWindow.FindName("NavCreate")
+    $navUpdate        = $script:mainWindow.FindName("NavUpdate")
+    $navAddMembers    = $script:mainWindow.FindName("NavAddMembers")
+    $navRemoveMembers = $script:mainWindow.FindName("NavRemoveMembers")
+    $navReadProps     = $script:mainWindow.FindName("NavReadProps")
+    $navDiscover      = $script:mainWindow.FindName("NavDiscover")
 
-    $pCreate        = $window.FindName("PanelCreate")
-    $pUpdate        = $window.FindName("PanelUpdate")
-    $pAddMembers    = $window.FindName("PanelAddMembers")
-    $pRemoveMembers = $window.FindName("PanelRemoveMembers")
-    $pReadProps     = $window.FindName("PanelReadProps")
-    $pDiscover      = $window.FindName("PanelDiscover")
+    $pCreate        = $script:mainWindow.FindName("PanelCreate")
+    $pUpdate        = $script:mainWindow.FindName("PanelUpdate")
+    $pAddMembers    = $script:mainWindow.FindName("PanelAddMembers")
+    $pRemoveMembers = $script:mainWindow.FindName("PanelRemoveMembers")
+    $pReadProps     = $script:mainWindow.FindName("PanelReadProps")
+    $pDiscover      = $script:mainWindow.FindName("PanelDiscover")
 
     # ── Nav panel switching ───────────────────────────────────────────────────
     $script:dgActiveNavColor   = [Windows.Media.SolidColorBrush]([Windows.Media.ColorConverter]::ConvertFromString("#0078D4"))
@@ -41,7 +41,7 @@ function Initialize-DGView {
     $navReadProps.Add_Click({     Switch-DGPanel 4 })
     $navDiscover.Add_Click({      Switch-DGPanel 5 })
 
-    $window.FindName("DGBtnBack").Add_Click({ Show-M365View })
+    $script:mainWindow.FindName("DGBtnBack").Add_Click({ Show-M365View })
 
     # ── Helper: set status text with colour ───────────────────────────────────
     function script:Set-DGStatusText {
@@ -74,12 +74,12 @@ function Initialize-DGView {
     # ─────────────────────────────────────────────────────
     # ── CREATE DG ──
     # ─────────────────────────────────────────────────────
-    $script:cDisplayName    = $window.FindName("C_DisplayName")
-    $script:cMailNickname   = $window.FindName("C_MailNickname")
-    $script:cDescription    = $window.FindName("C_Description")
-    $script:cSecurityEnabled= $window.FindName("C_SecurityEnabled")
-    $script:cStatus         = $window.FindName("C_Status")
-    $script:btnCreate       = $window.FindName("BtnCreate")
+    $script:cDisplayName    = $script:mainWindow.FindName("C_DisplayName")
+    $script:cMailNickname   = $script:mainWindow.FindName("C_MailNickname")
+    $script:cDescription    = $script:mainWindow.FindName("C_Description")
+    $script:cSecurityEnabled= $script:mainWindow.FindName("C_SecurityEnabled")
+    $script:cStatus         = $script:mainWindow.FindName("C_Status")
+    $script:btnCreate       = $script:mainWindow.FindName("BtnCreate")
 
     $script:btnCreate.Add_Click({
         $dn  = $script:cDisplayName.Text.Trim()
@@ -94,12 +94,12 @@ function Initialize-DGView {
         }
 
         Set-DGStatusText $script:cStatus "Creating distribution group..." "info"
-        $window.Cursor = [System.Windows.Input.Cursors]::Wait
+        $script:mainWindow.Cursor = [System.Windows.Input.Cursors]::Wait
         $script:btnCreate.IsEnabled = $false
 
         $result = New-DGGroup -DisplayName $dn -MailNickname $mn -Description $desc -SecurityEnabled $sec
 
-        $window.Cursor = $null
+        $script:mainWindow.Cursor = $null
         $script:btnCreate.IsEnabled = $true
 
         if ($result.Success) {
@@ -114,21 +114,21 @@ function Initialize-DGView {
     # ─────────────────────────────────────────────────────
     # ── UPDATE DG PROPERTIES ──
     # ─────────────────────────────────────────────────────
-    $script:uSearch       = $window.FindName("U_Search")
-    $script:uDGList       = $window.FindName("U_DGList")
-    $script:uFieldsPanel  = $window.FindName("U_FieldsPanel")
-    $script:uDisplayName  = $window.FindName("U_DisplayName")
-    $script:uDescription  = $window.FindName("U_Description")
-    $script:uStatus       = $window.FindName("U_Status")
-    $script:btnUSearch    = $window.FindName("BtnUSearch")
-    $script:btnUSave      = $window.FindName("BtnUSave")
+    $script:uSearch       = $script:mainWindow.FindName("U_Search")
+    $script:uDGList       = $script:mainWindow.FindName("U_DGList")
+    $script:uFieldsPanel  = $script:mainWindow.FindName("U_FieldsPanel")
+    $script:uDisplayName  = $script:mainWindow.FindName("U_DisplayName")
+    $script:uDescription  = $script:mainWindow.FindName("U_Description")
+    $script:uStatus       = $script:mainWindow.FindName("U_Status")
+    $script:btnUSearch    = $script:mainWindow.FindName("BtnUSearch")
+    $script:btnUSave      = $script:mainWindow.FindName("BtnUSave")
 
     $script:btnUSearch.Add_Click({
         $q = $script:uSearch.Text.Trim()
         if (-not $q) { return }
-        $window.Cursor = [System.Windows.Input.Cursors]::Wait
+        $script:mainWindow.Cursor = [System.Windows.Input.Cursors]::Wait
         $result = Get-DGList -SearchQuery $q
-        $window.Cursor = $null
+        $script:mainWindow.Cursor = $null
         if ($result.Success) {
             Fill-DGGroupList $script:uDGList $result.Groups
             if ($result.Groups.Count -eq 0) {
@@ -156,10 +156,10 @@ function Initialize-DGView {
         $newDesc = $script:uDescription.Text.Trim()
         if (-not $newDN) { Set-DGStatusText $script:uStatus "Display Name cannot be empty." "error"; return }
 
-        $window.Cursor = [System.Windows.Input.Cursors]::Wait
+        $script:mainWindow.Cursor = [System.Windows.Input.Cursors]::Wait
         $script:btnUSave.IsEnabled = $false
         $result = Update-DGGroup -GroupId $selected.Id -DisplayName $newDN -Description $newDesc
-        $window.Cursor = $null
+        $script:mainWindow.Cursor = $null
         $script:btnUSave.IsEnabled = $true
 
         if ($result.Success) {
@@ -172,21 +172,21 @@ function Initialize-DGView {
     # ─────────────────────────────────────────────────────
     # ── ADD MEMBERS ──
     # ─────────────────────────────────────────────────────
-    $script:amGrpSearch  = $window.FindName("AM_GrpSearch")
-    $script:amGrpList    = $window.FindName("AM_GrpList")
-    $script:amUsrSearch  = $window.FindName("AM_UsrSearch")
-    $script:amUsrList    = $window.FindName("AM_UsrList")
-    $script:amStatus     = $window.FindName("AM_Status")
-    $script:btnAMGrpSrc  = $window.FindName("BtnAMGrpSearch")
-    $script:btnAMUsrSrc  = $window.FindName("BtnAMUsrSearch")
-    $script:btnAMAdd     = $window.FindName("BtnAMAdd")
+    $script:amGrpSearch  = $script:mainWindow.FindName("AM_GrpSearch")
+    $script:amGrpList    = $script:mainWindow.FindName("AM_GrpList")
+    $script:amUsrSearch  = $script:mainWindow.FindName("AM_UsrSearch")
+    $script:amUsrList    = $script:mainWindow.FindName("AM_UsrList")
+    $script:amStatus     = $script:mainWindow.FindName("AM_Status")
+    $script:btnAMGrpSrc  = $script:mainWindow.FindName("BtnAMGrpSearch")
+    $script:btnAMUsrSrc  = $script:mainWindow.FindName("BtnAMUsrSearch")
+    $script:btnAMAdd     = $script:mainWindow.FindName("BtnAMAdd")
 
     $script:btnAMGrpSrc.Add_Click({
         $q = $script:amGrpSearch.Text.Trim()
         if (-not $q) { return }
-        $window.Cursor = [System.Windows.Input.Cursors]::Wait
+        $script:mainWindow.Cursor = [System.Windows.Input.Cursors]::Wait
         $result = Get-DGList -SearchQuery $q
-        $window.Cursor = $null
+        $script:mainWindow.Cursor = $null
         if ($result.Success) { Fill-DGGroupList $script:amGrpList $result.Groups }
         else {
             [System.Windows.MessageBox]::Show("Search failed:`n$($result.Error)", "Error",
@@ -197,9 +197,9 @@ function Initialize-DGView {
     $script:btnAMUsrSrc.Add_Click({
         $q = $script:amUsrSearch.Text.Trim()
         if (-not $q) { return }
-        $window.Cursor = [System.Windows.Input.Cursors]::Wait
+        $script:mainWindow.Cursor = [System.Windows.Input.Cursors]::Wait
         $result = Search-MigrazeUsers -Query $q
-        $window.Cursor = $null
+        $script:mainWindow.Cursor = $null
         $script:amUsrList.Items.Clear()
         if ($result.Success) {
             foreach ($u in $result.Users) {
@@ -225,10 +225,10 @@ function Initialize-DGView {
         $grp = $script:amGrpList.SelectedItem
         $usr = $script:amUsrList.SelectedItem
         if (-not $grp -or -not $usr) { Set-DGStatusText $script:amStatus "Select both a group and a user." "error"; return }
-        $window.Cursor = [System.Windows.Input.Cursors]::Wait
+        $script:mainWindow.Cursor = [System.Windows.Input.Cursors]::Wait
         $script:btnAMAdd.IsEnabled = $false
         $result = Add-DGMember -GroupId $grp.Id -UserId $usr.Id
-        $window.Cursor = $null
+        $script:mainWindow.Cursor = $null
         $script:btnAMAdd.IsEnabled = $true
         if ($result.Success) {
             Set-DGStatusText $script:amStatus "$($usr.DisplayName) added to $($grp.DisplayName) successfully." "success"
@@ -240,20 +240,20 @@ function Initialize-DGView {
     # ─────────────────────────────────────────────────────
     # ── REMOVE MEMBERS ──
     # ─────────────────────────────────────────────────────
-    $script:rmGrpSearch    = $window.FindName("RM_GrpSearch")
-    $script:rmGrpList      = $window.FindName("RM_GrpList")
-    $script:rmMbrList      = $window.FindName("RM_MbrList")
-    $script:rmStatus       = $window.FindName("RM_Status")
-    $script:btnRMGrpSrc    = $window.FindName("BtnRMGrpSearch")
-    $script:btnRMLoadMbrs  = $window.FindName("BtnRMLoadMembers")
-    $script:btnRMRemove    = $window.FindName("BtnRMRemove")
+    $script:rmGrpSearch    = $script:mainWindow.FindName("RM_GrpSearch")
+    $script:rmGrpList      = $script:mainWindow.FindName("RM_GrpList")
+    $script:rmMbrList      = $script:mainWindow.FindName("RM_MbrList")
+    $script:rmStatus       = $script:mainWindow.FindName("RM_Status")
+    $script:btnRMGrpSrc    = $script:mainWindow.FindName("BtnRMGrpSearch")
+    $script:btnRMLoadMbrs  = $script:mainWindow.FindName("BtnRMLoadMembers")
+    $script:btnRMRemove    = $script:mainWindow.FindName("BtnRMRemove")
 
     $script:btnRMGrpSrc.Add_Click({
         $q = $script:rmGrpSearch.Text.Trim()
         if (-not $q) { return }
-        $window.Cursor = [System.Windows.Input.Cursors]::Wait
+        $script:mainWindow.Cursor = [System.Windows.Input.Cursors]::Wait
         $result = Get-DGList -SearchQuery $q
-        $window.Cursor = $null
+        $script:mainWindow.Cursor = $null
         if ($result.Success) {
             Fill-DGGroupList $script:rmGrpList $result.Groups
             $script:btnRMLoadMbrs.IsEnabled = ($script:rmGrpList.Items.Count -gt 0)
@@ -268,9 +268,9 @@ function Initialize-DGView {
     $script:btnRMLoadMbrs.Add_Click({
         $grp = $script:rmGrpList.SelectedItem
         if (-not $grp) { return }
-        $window.Cursor = [System.Windows.Input.Cursors]::Wait
+        $script:mainWindow.Cursor = [System.Windows.Input.Cursors]::Wait
         $result = Get-DGProperties -GroupId $grp.Id
-        $window.Cursor = $null
+        $script:mainWindow.Cursor = $null
         $script:rmMbrList.Items.Clear()
         if ($result.Success) {
             foreach ($m in $result.Members) {
@@ -304,14 +304,14 @@ function Initialize-DGView {
         )
         if ($confirm -ne [System.Windows.MessageBoxResult]::Yes) { return }
 
-        $window.Cursor = [System.Windows.Input.Cursors]::Wait
+        $script:mainWindow.Cursor = [System.Windows.Input.Cursors]::Wait
         $script:btnRMRemove.IsEnabled = $false
         $errors = @()
         foreach ($mbr in $selected) {
             $res = Remove-DGMember -GroupId $grp.Id -MemberId $mbr.Id
             if (-not $res.Success) { $errors += $mbr.DisplayName }
         }
-        $window.Cursor = $null
+        $script:mainWindow.Cursor = $null
         $script:btnRMRemove.IsEnabled = $true
 
         if ($errors.Count -eq 0) {
@@ -325,22 +325,22 @@ function Initialize-DGView {
     # ─────────────────────────────────────────────────────
     # ── READ PROPERTIES ──
     # ─────────────────────────────────────────────────────
-    $script:rSearch      = $window.FindName("R_Search")
-    $script:rDGList      = $window.FindName("R_DGList")
-    $script:rPropsBox    = $window.FindName("R_PropsBox")
-    $script:rPropsContent= $window.FindName("R_PropsContent")
-    $script:rMembersBox  = $window.FindName("R_MembersBox")
-    $script:rMbrList     = $window.FindName("R_MbrList")
-    $script:rMbrHeader   = $window.FindName("R_MemberHeader")
-    $script:btnRSearch   = $window.FindName("BtnRSearch")
-    $script:btnRLoad     = $window.FindName("BtnRLoad")
+    $script:rSearch      = $script:mainWindow.FindName("R_Search")
+    $script:rDGList      = $script:mainWindow.FindName("R_DGList")
+    $script:rPropsBox    = $script:mainWindow.FindName("R_PropsBox")
+    $script:rPropsContent= $script:mainWindow.FindName("R_PropsContent")
+    $script:rMembersBox  = $script:mainWindow.FindName("R_MembersBox")
+    $script:rMbrList     = $script:mainWindow.FindName("R_MbrList")
+    $script:rMbrHeader   = $script:mainWindow.FindName("R_MemberHeader")
+    $script:btnRSearch   = $script:mainWindow.FindName("BtnRSearch")
+    $script:btnRLoad     = $script:mainWindow.FindName("BtnRLoad")
 
     $script:btnRSearch.Add_Click({
         $q = $script:rSearch.Text.Trim()
         if (-not $q) { return }
-        $window.Cursor = [System.Windows.Input.Cursors]::Wait
+        $script:mainWindow.Cursor = [System.Windows.Input.Cursors]::Wait
         $result = Get-DGList -SearchQuery $q
-        $window.Cursor = $null
+        $script:mainWindow.Cursor = $null
         if ($result.Success) {
             Fill-DGGroupList $script:rDGList $result.Groups
             $script:btnRLoad.IsEnabled = ($script:rDGList.Items.Count -gt 0)
@@ -355,9 +355,9 @@ function Initialize-DGView {
     $script:btnRLoad.Add_Click({
         $grp = $script:rDGList.SelectedItem
         if (-not $grp) { return }
-        $window.Cursor = [System.Windows.Input.Cursors]::Wait
+        $script:mainWindow.Cursor = [System.Windows.Input.Cursors]::Wait
         $result = Get-DGProperties -GroupId $grp.Id
-        $window.Cursor = $null
+        $script:mainWindow.Cursor = $null
         if (-not $result.Success) {
             [System.Windows.MessageBox]::Show("Failed to load properties:`n$($result.Error)", "Error",
                 [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Error) | Out-Null
@@ -410,21 +410,21 @@ function Initialize-DGView {
     # ─────────────────────────────────────────────────────
     # ── DISCOVER ALL DGs ──
     # ─────────────────────────────────────────────────────
-    $script:discStatus    = $window.FindName("Disc_Status")
-    $script:dgResultList  = $window.FindName("DG_ResultList")
-    $script:btnDiscoverAll= $window.FindName("BtnDiscoverAll")
-    $script:btnExportCSV  = $window.FindName("BtnExportCSV")
+    $script:discStatus    = $script:mainWindow.FindName("Disc_Status")
+    $script:dgResultList  = $script:mainWindow.FindName("DG_ResultList")
+    $script:btnDiscoverAll= $script:mainWindow.FindName("BtnDiscoverAll")
+    $script:btnExportCSV  = $script:mainWindow.FindName("BtnExportCSV")
     $script:DiscoveredDGs = @()
 
     $script:btnDiscoverAll.Add_Click({
         Set-DGStatusText $script:discStatus "Discovering all distribution groups... please wait." "info"
-        $window.Cursor     = [System.Windows.Input.Cursors]::Wait
+        $script:mainWindow.Cursor     = [System.Windows.Input.Cursors]::Wait
         $script:btnDiscoverAll.IsEnabled = $false
         $script:btnExportCSV.IsEnabled   = $false
         $script:dgResultList.Items.Clear()
 
         $result = Get-AllDGsForDiscovery
-        $window.Cursor     = $null
+        $script:mainWindow.Cursor     = $null
         $script:btnDiscoverAll.IsEnabled = $true
 
         if ($result.Success) {
