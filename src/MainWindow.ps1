@@ -1,4 +1,4 @@
-﻿# MainWindow.ps1 - Migraze v2.0 main application window (single-window navigation)
+# MainWindow.ps1 - Migraze v2.0 main application window (single-window navigation)
 
 function Show-MainWindow {
 
@@ -766,78 +766,78 @@ function Show-MainWindow {
     })
 
     # ── Named element references ───────────────────────────────────────────────
-    $viewHome   = $window.FindName("ViewHome")
-    $viewM365   = $window.FindName("ViewM365")
-    $viewDG     = $window.FindName("ViewDG")
-    $viewSM     = $window.FindName("ViewSM")
-    $viewUM     = $window.FindName("ViewUM")
-    $btnBack    = $window.FindName("BtnBack")
-    $headerSub  = $window.FindName("HeaderSubtitle")
-    $connBadge  = $window.FindName("ConnStatusBadge")
-    $connDot    = $window.FindName("ConnDot")
-    $connText   = $window.FindName("ConnStatusText")
-    $tenantInfo = $window.FindName("TenantInfoText")
-    $btnConnect = $window.FindName("BtnConnect")
-    $btnConnText= $window.FindName("BtnConnectText")
-    $footerText = $window.FindName("FooterText")
-    $btnDG      = $window.FindName("BtnDG")
-    $btnSM      = $window.FindName("BtnSM")
-    $btnUM      = $window.FindName("BtnUM")
+    $script:viewHome   = $window.FindName("ViewHome")
+    $script:viewM365   = $window.FindName("ViewM365")
+    $script:viewDG     = $window.FindName("ViewDG")
+    $script:viewSM     = $window.FindName("ViewSM")
+    $script:viewUM     = $window.FindName("ViewUM")
+    $script:btnBack    = $window.FindName("BtnBack")
+    $script:headerSub  = $window.FindName("HeaderSubtitle")
+    $script:connBadge  = $window.FindName("ConnStatusBadge")
+    $script:connDot    = $window.FindName("ConnDot")
+    $script:connText   = $window.FindName("ConnStatusText")
+    $script:tenantInfo = $window.FindName("TenantInfoText")
+    $script:btnConnect = $window.FindName("BtnConnect")
+    $script:btnConnText= $window.FindName("BtnConnectText")
+    $script:footerText = $window.FindName("FooterText")
+    $script:btnDG      = $window.FindName("BtnDG")
+    $script:btnSM      = $window.FindName("BtnSM")
+    $script:btnUM      = $window.FindName("BtnUM")
 
-    $allViews = @($viewHome, $viewM365, $viewDG, $viewSM, $viewUM)
+    $script:allViews = @($script:viewHome, $script:viewM365, $script:viewDG, $script:viewSM, $script:viewUM)
 
     $script:CurrentView = "Home"
 
     # ── Navigation helpers ─────────────────────────────────────────────────────
     function script:Show-HomeView {
-        $allViews | ForEach-Object { $_.Visibility = "Collapsed" }
-        $viewHome.Visibility  = "Visible"
-        $btnBack.Visibility   = "Collapsed"
-        $connBadge.Visibility = "Collapsed"
-        $headerSub.Text       = "Cloud Management Platform"
-        $footerText.Text      = "Migraze v2.0  |  Ready"
+        $script:allViews | ForEach-Object { $_.Visibility = "Collapsed" }
+        $script:viewHome.Visibility  = "Visible"
+        $script:btnBack.Visibility   = "Collapsed"
+        $script:connBadge.Visibility = "Collapsed"
+        $script:headerSub.Text       = "Cloud Management Platform"
+        $script:footerText.Text      = "Migraze v2.0  |  Ready"
         $script:CurrentView   = "Home"
     }
 
     function script:Show-M365View {
-        $allViews | ForEach-Object { $_.Visibility = "Collapsed" }
-        $viewM365.Visibility  = "Visible"
-        $btnBack.Visibility   = "Visible"
-        $connBadge.Visibility = "Visible"
-        $headerSub.Text       = "Microsoft 365"
+        $script:allViews | ForEach-Object { $_.Visibility = "Collapsed" }
+        $script:viewM365.Visibility  = "Visible"
+        $script:btnBack.Visibility   = "Visible"
+        $script:connBadge.Visibility = "Visible"
+        $script:headerSub.Text       = "Microsoft 365"
         $script:CurrentView   = "M365"
         Update-M365ConnStatus
         Write-MigrazeLog "Microsoft 365 management opened." "Info"
     }
 
     function script:Show-DGView {
-        $allViews | ForEach-Object { $_.Visibility = "Collapsed" }
-        $viewDG.Visibility    = "Visible"
-        $btnBack.Visibility   = "Visible"
-        $connBadge.Visibility = "Visible"
-        $headerSub.Text       = "Distribution Groups"
+        $script:allViews | ForEach-Object { $_.Visibility = "Collapsed" }
+        $script:viewDG.Visibility    = "Visible"
+        $script:btnBack.Visibility   = "Visible"
+        $script:connBadge.Visibility = "Visible"
+        $script:headerSub.Text       = "Distribution Groups"
         $script:CurrentView   = "DG"
         Update-M365ConnStatus
         Write-MigrazeLog "Distribution Groups management opened." "Info"
     }
 
     function script:Show-SMView {
-        $allViews | ForEach-Object { $_.Visibility = "Collapsed" }
-        $viewSM.Visibility    = "Visible"
-        $btnBack.Visibility   = "Visible"
-        $connBadge.Visibility = "Visible"
-        $headerSub.Text       = "Shared Mailbox"
+        $script:allViews | ForEach-Object { $_.Visibility = "Collapsed" }
+        $script:viewSM.Visibility    = "Visible"
+        $script:btnBack.Visibility   = "Visible"
+        $script:connBadge.Visibility = "Visible"
+        $script:headerSub.Text       = "Shared Mailbox"
         $script:CurrentView   = "SM"
         Update-M365ConnStatus
         Write-MigrazeLog "Shared Mailbox management opened." "Info"
     }
 
     function script:Show-UMView {
-        $allViews | ForEach-Object { $_.Visibility = "Collapsed" }
-        $viewUM.Visibility    = "Visible"
-        $btnBack.Visibility   = "Visible"
-        $connBadge.Visibility = "Visible"
-        $headerSub.Text       = "User Mailbox"
+        $script:allViews | ForEach-Object { $_.Visibility = "Collapsed" }
+        $script:viewUM.Visibility    = "Visible"
+        $script:btnBack.Visibility   = "Visible"
+        $script:connBadge.Visibility = "Visible"
+        $script:headerSub.Text       = "User Mailbox"
         $script:CurrentView   = "UM"
         Update-M365ConnStatus
         Write-MigrazeLog "User Mailbox management opened." "Info"
@@ -846,34 +846,34 @@ function Show-MainWindow {
     function script:Update-M365ConnStatus {
         $connected = Get-MigrazeConnectionStatus
         if ($connected.Connected) {
-            $connDot.Fill         = [Windows.Media.SolidColorBrush]([Windows.Media.ColorConverter]::ConvertFromString("#00C853"))
-            $connText.Text        = "Connected"
-            $connText.Foreground  = [Windows.Media.SolidColorBrush]([Windows.Media.ColorConverter]::ConvertFromString("#AAFFCC"))
-            $connBadge.Background = [Windows.Media.SolidColorBrush]([Windows.Media.ColorConverter]::ConvertFromString("#0C2A10"))
-            $btnConnText.Text     = "Disconnect"
-            $btnConnect.Background= [Windows.Media.SolidColorBrush]([Windows.Media.ColorConverter]::ConvertFromString("#C62828"))
+            $script:connDot.Fill         = [Windows.Media.SolidColorBrush]([Windows.Media.ColorConverter]::ConvertFromString("#00C853"))
+            $script:connText.Text        = "Connected"
+            $script:connText.Foreground  = [Windows.Media.SolidColorBrush]([Windows.Media.ColorConverter]::ConvertFromString("#AAFFCC"))
+            $script:connBadge.Background = [Windows.Media.SolidColorBrush]([Windows.Media.ColorConverter]::ConvertFromString("#0C2A10"))
+            $script:btnConnText.Text     = "Disconnect"
+            $script:btnConnect.Background= [Windows.Media.SolidColorBrush]([Windows.Media.ColorConverter]::ConvertFromString("#C62828"))
             $infoMsg = if ($connected.Account) { "Connected as: $($connected.Account)" } elseif ($script:GraphAccount) { "Connected as: $($script:GraphAccount)" } else { "Connected to Microsoft 365." }
-            $tenantInfo.Text      = $infoMsg
+            $script:tenantInfo.Text      = $infoMsg
             $acctLabel = if ($connected.Account) { $connected.Account } elseif ($script:GraphAccount) { $script:GraphAccount } else { "M365" }
-            $footerText.Text      = "Migraze v2.0  |  Microsoft 365  |  $acctLabel"
-            $btnDG.IsEnabled = $true; $btnSM.IsEnabled = $true; $btnUM.IsEnabled = $true
+            $script:footerText.Text      = "Migraze v2.0  |  Microsoft 365  |  $acctLabel"
+            $script:btnDG.IsEnabled = $true; $script:btnSM.IsEnabled = $true; $script:btnUM.IsEnabled = $true
         } else {
-            $connDot.Fill         = [Windows.Media.SolidColorBrush]([Windows.Media.ColorConverter]::ConvertFromString("#FF5252"))
-            $connText.Text        = "Not Connected"
-            $connText.Foreground  = [Windows.Media.SolidColorBrush]([Windows.Media.ColorConverter]::ConvertFromString("#FFAAAA"))
-            $connBadge.Background = [Windows.Media.SolidColorBrush]([Windows.Media.ColorConverter]::ConvertFromString("#2A1010"))
-            $btnConnText.Text     = "Connect to M365 Tenant"
-            $btnConnect.Background= [Windows.Media.SolidColorBrush]([Windows.Media.ColorConverter]::ConvertFromString("#0078D4"))
-            $tenantInfo.Text      = "Connect to your Microsoft 365 tenant to manage Exchange Online objects."
-            $footerText.Text      = "Migraze v2.0  |  Microsoft 365  |  Not Connected"
-            $btnDG.IsEnabled = $false; $btnSM.IsEnabled = $false; $btnUM.IsEnabled = $false
+            $script:connDot.Fill         = [Windows.Media.SolidColorBrush]([Windows.Media.ColorConverter]::ConvertFromString("#FF5252"))
+            $script:connText.Text        = "Not Connected"
+            $script:connText.Foreground  = [Windows.Media.SolidColorBrush]([Windows.Media.ColorConverter]::ConvertFromString("#FFAAAA"))
+            $script:connBadge.Background = [Windows.Media.SolidColorBrush]([Windows.Media.ColorConverter]::ConvertFromString("#2A1010"))
+            $script:btnConnText.Text     = "Connect to M365 Tenant"
+            $script:btnConnect.Background= [Windows.Media.SolidColorBrush]([Windows.Media.ColorConverter]::ConvertFromString("#0078D4"))
+            $script:tenantInfo.Text      = "Connect to your Microsoft 365 tenant to manage Exchange Online objects."
+            $script:footerText.Text      = "Migraze v2.0  |  Microsoft 365  |  Not Connected"
+            $script:btnDG.IsEnabled = $false; $script:btnSM.IsEnabled = $false; $script:btnUM.IsEnabled = $false
         }
     }
 
     # ── Event handlers ─────────────────────────────────────────────────────────
     $window.FindName("BtnM365").Add_Click({ Show-M365View })
 
-    $btnBack.Add_Click({
+    $script:btnBack.Add_Click({
         switch ($script:CurrentView) {
             "M365" { Show-HomeView }
             "DG"   { Show-M365View }
@@ -882,7 +882,7 @@ function Show-MainWindow {
         }
     })
 
-    $btnConnect.Add_Click({
+    $script:btnConnect.Add_Click({
         if ((Get-MigrazeConnectionStatus).Connected) {
             Write-MigrazeLog "Disconnecting from Microsoft 365..." "Action"
             Disconnect-MigrazeGraph
@@ -894,9 +894,9 @@ function Show-MainWindow {
         Update-M365ConnStatus
     })
 
-    $btnDG.Add_Click({ Show-DGView })
-    $btnSM.Add_Click({ Show-SMView })
-    $btnUM.Add_Click({ Show-UMView })
+    $script:btnDG.Add_Click({ Show-DGView })
+    $script:btnSM.Add_Click({ Show-SMView })
+    $script:btnUM.Add_Click({ Show-UMView })
 
     # ── Initialize DG view event handlers ─────────────────────────────────────
     Initialize-DGView $window
