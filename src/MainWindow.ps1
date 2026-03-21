@@ -789,7 +789,7 @@ function Show-MainWindow {
     $script:CurrentView = "Home"
 
     # ── Navigation helpers ─────────────────────────────────────────────────────
-    function Show-HomeView {
+    function script:Show-HomeView {
         $allViews | ForEach-Object { $_.Visibility = "Collapsed" }
         $viewHome.Visibility  = "Visible"
         $btnBack.Visibility   = "Collapsed"
@@ -799,7 +799,7 @@ function Show-MainWindow {
         $script:CurrentView   = "Home"
     }
 
-    function Show-M365View {
+    function script:Show-M365View {
         $allViews | ForEach-Object { $_.Visibility = "Collapsed" }
         $viewM365.Visibility  = "Visible"
         $btnBack.Visibility   = "Visible"
@@ -810,7 +810,7 @@ function Show-MainWindow {
         Write-MigrazeLog "Microsoft 365 management opened." "Info"
     }
 
-    function Show-DGView {
+    function script:Show-DGView {
         $allViews | ForEach-Object { $_.Visibility = "Collapsed" }
         $viewDG.Visibility    = "Visible"
         $btnBack.Visibility   = "Visible"
@@ -821,7 +821,7 @@ function Show-MainWindow {
         Write-MigrazeLog "Distribution Groups management opened." "Info"
     }
 
-    function Show-SMView {
+    function script:Show-SMView {
         $allViews | ForEach-Object { $_.Visibility = "Collapsed" }
         $viewSM.Visibility    = "Visible"
         $btnBack.Visibility   = "Visible"
@@ -832,7 +832,7 @@ function Show-MainWindow {
         Write-MigrazeLog "Shared Mailbox management opened." "Info"
     }
 
-    function Show-UMView {
+    function script:Show-UMView {
         $allViews | ForEach-Object { $_.Visibility = "Collapsed" }
         $viewUM.Visibility    = "Visible"
         $btnBack.Visibility   = "Visible"
@@ -843,7 +843,7 @@ function Show-MainWindow {
         Write-MigrazeLog "User Mailbox management opened." "Info"
     }
 
-    function Update-M365ConnStatus {
+    function script:Update-M365ConnStatus {
         $connected = Get-MigrazeConnectionStatus
         if ($connected.Connected) {
             $connDot.Fill         = [Windows.Media.SolidColorBrush]([Windows.Media.ColorConverter]::ConvertFromString("#00C853"))
