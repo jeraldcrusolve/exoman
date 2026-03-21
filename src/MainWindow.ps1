@@ -397,276 +397,339 @@ function Show-MainWindow {
 
       <!-- ─────────────────── VIEW: DISTRIBUTION GROUPS ─────────────────── -->
       <Grid x:Name="ViewDG" Visibility="Collapsed">
-        <Grid.ColumnDefinitions>
-          <ColumnDefinition Width="200"/>
-          <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
 
-        <!-- Sidebar -->
-        <Border Grid.Column="0" Background="#0F2B50">
-          <Grid>
-            <Grid.RowDefinitions>
-              <RowDefinition Height="68"/>
-              <RowDefinition Height="*"/>
-              <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
+        <!-- ═══ LAYER 1: DG HOME (Landing) ═══ -->
+        <Grid x:Name="PanelDGHome" Visibility="Visible" Background="#F0F4F8">
+          <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="800">
+            <TextBlock Text="Distribution Groups" FontSize="26" FontWeight="Bold"
+                       Foreground="#0F2B50" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+            <TextBlock Text="Choose an operation mode to get started."
+                       FontSize="13" Foreground="#667788" HorizontalAlignment="Center" Margin="0,0,0,36"/>
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="24"/>
+                <ColumnDefinition Width="*"/>
+              </Grid.ColumnDefinitions>
 
-            <Border Grid.Row="0" Background="#081D36" Padding="16,0">
-              <StackPanel VerticalAlignment="Center">
-                <TextBlock Text="Distribution Groups" Foreground="White" FontSize="14" FontWeight="Bold" TextWrapping="Wrap"/>
-                <TextBlock Text="Exchange Online" Foreground="#7AAFD4" FontSize="11"/>
-              </StackPanel>
-            </Border>
-
-            <StackPanel Grid.Row="1" Margin="8,14,8,0">
-              <Button x:Name="NavCreate"        Content="&#x2795;   Create Distribution Group"  Style="{StaticResource NavBtn}"/>
-              <Button x:Name="NavUpdate"        Content="&#x270F;&#xFE0F;   Update DG Properties"       Style="{StaticResource NavBtn}" Margin="0,3,0,0"/>
-              <Button x:Name="NavAddMembers"    Content="&#x1F464;+  Add Members"                Style="{StaticResource NavBtn}" Margin="0,3,0,0"/>
-              <Button x:Name="NavRemoveMembers" Content="&#x1F464;&#x2013;  Remove Members"             Style="{StaticResource NavBtn}" Margin="0,3,0,0"/>
-              <Button x:Name="NavReadProps"     Content="&#x1F4CB;   Read Current Properties"    Style="{StaticResource NavBtn}" Margin="0,3,0,0"/>
-              <Button x:Name="NavDiscover"      Content="&#x1F50D;   Discover All DGs"           Style="{StaticResource NavBtn}" Margin="0,3,0,0"/>
-            </StackPanel>
-
-            <Border Grid.Row="2" BorderBrush="#1A3A5C" BorderThickness="0,1,0,0">
-              <StackPanel Margin="8,8,8,10">
-                <Button x:Name="DGBtnBack" Content="&#x2190; Back to M365"
-                        Style="{StaticResource NavBtn}"
-                        Foreground="#FF8A80" FontSize="12"/>
-                <TextBlock Text="Graph PowerShell SDK" Foreground="#4A7FAE"
-                           FontSize="10" Margin="6,6,0,0"/>
-              </StackPanel>
-            </Border>
-          </Grid>
-        </Border>
-
-        <!-- Content area -->
-        <Grid Grid.Column="1">
-
-          <!-- Panel: Create DG -->
-          <ScrollViewer x:Name="PanelCreate" Visibility="Visible"
-                        VerticalScrollBarVisibility="Auto" Padding="30,26,30,20">
-            <StackPanel>
-              <TextBlock Text="Create Distribution Group" FontSize="22" FontWeight="Bold" Foreground="#0F2B50"/>
-              <TextBlock Text="Creates a new mail-enabled distribution group in Exchange Online."
-                         FontSize="12" Foreground="#667788" Margin="0,4,0,22"/>
-
-              <TextBlock Text="Display Name *" Style="{StaticResource Lbl}"/>
-              <TextBox x:Name="C_DisplayName" Style="{StaticResource TB}"
-                       ToolTip="Name shown in the Global Address List"/>
-
-              <TextBlock Text="Email Alias (MailNickname) *" Style="{StaticResource Lbl}"/>
-              <TextBox x:Name="C_MailNickname" Style="{StaticResource TB}"
-                       ToolTip="Part before @ in the email address. No spaces or special characters."/>
-
-              <TextBlock Text="Description" Style="{StaticResource Lbl}"/>
-              <TextBox x:Name="C_Description" Style="{StaticResource TB}"
-                       Height="75" TextWrapping="Wrap" AcceptsReturn="True"
-                       VerticalScrollBarVisibility="Auto"/>
-
-              <CheckBox x:Name="C_SecurityEnabled"
-                        Content="Also enable as a Security Group"
-                        Margin="0,14,0,0" FontSize="13" Foreground="#2C3E50"/>
-
-              <TextBlock x:Name="C_Status" Visibility="Collapsed"
-                         FontSize="13" Margin="0,16,0,0"/>
-
-              <Button x:Name="BtnCreate" Content="  Create Distribution Group  "
-                      Style="{StaticResource ActionBtn}" HorizontalAlignment="Left" Margin="0,20,0,8"/>
-            </StackPanel>
-          </ScrollViewer>
-
-          <!-- Panel: Update DG Properties -->
-          <ScrollViewer x:Name="PanelUpdate" Visibility="Collapsed"
-                        VerticalScrollBarVisibility="Auto" Padding="30,26,30,20">
-            <StackPanel>
-              <TextBlock Text="Update DG Properties" FontSize="22" FontWeight="Bold" Foreground="#0F2B50"/>
-              <TextBlock Text="Search for a distribution group and edit its properties."
-                         FontSize="12" Foreground="#667788" Margin="0,4,0,22"/>
-
-              <TextBlock Text="Search Distribution Group" Style="{StaticResource Lbl}" Margin="0,0,0,4"/>
-              <Grid>
-                <Grid.ColumnDefinitions>
-                  <ColumnDefinition Width="*"/>
-                  <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <TextBox x:Name="U_Search" Style="{StaticResource TB}"
-                         ToolTip="Enter display name or email prefix"/>
-                <Button x:Name="BtnUSearch" Grid.Column="1" Content="Search"
-                        Style="{StaticResource SmallBtn}" Margin="8,0,0,0"/>
-              </Grid>
-              <ListBox x:Name="U_DGList" Style="{StaticResource LB}" Height="110" Margin="0,6,0,0"/>
-
-              <Border x:Name="U_FieldsPanel" Visibility="Collapsed"
-                      Background="White" CornerRadius="7" Padding="16,14"
-                      Margin="0,16,0,0" BorderBrush="#D0DCE8" BorderThickness="1">
+              <!-- Card: Single DG Operation -->
+              <Border x:Name="CardSingleDG" Grid.Column="0" Background="White"
+                      CornerRadius="10" BorderBrush="#DDEAF7" BorderThickness="1"
+                      Padding="28,26" Cursor="Hand">
                 <StackPanel>
-                  <TextBlock Text="Edit Properties" FontSize="14" FontWeight="SemiBold"
-                             Foreground="#0F2B50" Margin="0,0,0,8"/>
-                  <TextBlock Text="Display Name" Style="{StaticResource Lbl}" Margin="0,0,0,4"/>
-                  <TextBox x:Name="U_DisplayName" Style="{StaticResource TB}"/>
-                  <TextBlock Text="Description" Style="{StaticResource Lbl}"/>
-                  <TextBox x:Name="U_Description" Style="{StaticResource TB}"
-                           Height="70" TextWrapping="Wrap" AcceptsReturn="True"/>
-                  <TextBlock x:Name="U_Status" Visibility="Collapsed" FontSize="13" Margin="0,14,0,0"/>
-                  <Button x:Name="BtnUSave" Content="  Save Changes  "
-                          Style="{StaticResource ActionBtn}" HorizontalAlignment="Left" Margin="0,16,0,4"/>
+                  <TextBlock Text="&#x1F4E7;" FontSize="42" HorizontalAlignment="Center" Margin="0,0,0,14"/>
+                  <TextBlock Text="Single DG Operation" FontSize="16" FontWeight="SemiBold"
+                             Foreground="#0F2B50" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                  <TextBlock Text="Create, search and update individual distribution groups."
+                             FontSize="12" Foreground="#667788" TextAlignment="Center"
+                             TextWrapping="Wrap" Margin="0,0,0,18"/>
+                  <Border Background="#EBF5FF" CornerRadius="4" Padding="10,4" HorizontalAlignment="Center">
+                    <TextBlock Text="Create · Search · Update" Foreground="#0078D4" FontSize="11"/>
+                  </Border>
                 </StackPanel>
               </Border>
-            </StackPanel>
-          </ScrollViewer>
 
-          <!-- Panel: Add Members -->
-          <ScrollViewer x:Name="PanelAddMembers" Visibility="Collapsed"
-                        VerticalScrollBarVisibility="Auto" Padding="30,26,30,20">
-            <StackPanel>
-              <TextBlock Text="Add Members" FontSize="22" FontWeight="Bold" Foreground="#0F2B50"/>
-              <TextBlock Text="Add a user to a distribution group."
-                         FontSize="12" Foreground="#667788" Margin="0,4,0,22"/>
+              <!-- Card: Bulk Operation -->
+              <Border x:Name="CardBulkDG" Grid.Column="2" Background="White"
+                      CornerRadius="10" BorderBrush="#DDEAF7" BorderThickness="1"
+                      Padding="28,26" Cursor="Hand">
+                <StackPanel>
+                  <TextBlock Text="&#x1F4CA;" FontSize="42" HorizontalAlignment="Center" Margin="0,0,0,14"/>
+                  <TextBlock Text="Bulk Operation" FontSize="16" FontWeight="SemiBold"
+                             Foreground="#0F2B50" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                  <TextBlock Text="Discover, bulk create and bulk update distribution groups at scale."
+                             FontSize="12" Foreground="#667788" TextAlignment="Center"
+                             TextWrapping="Wrap" Margin="0,0,0,18"/>
+                  <Border Background="#EBF5FF" CornerRadius="4" Padding="10,4" HorizontalAlignment="Center">
+                    <TextBlock Text="Discover · Bulk Create · Bulk Update" Foreground="#0078D4" FontSize="11"/>
+                  </Border>
+                </StackPanel>
+              </Border>
+            </Grid>
 
-              <TextBlock Text="Step 1 &#x2013; Select Distribution Group" Style="{StaticResource Lbl}" Margin="0,0,0,4"/>
-              <Grid>
-                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                <TextBox x:Name="AM_GrpSearch" Style="{StaticResource TB}"/>
-                <Button x:Name="BtnAMGrpSearch" Grid.Column="1" Content="Search"
-                        Style="{StaticResource SmallBtn}" Margin="8,0,0,0"/>
-              </Grid>
-              <ListBox x:Name="AM_GrpList" Style="{StaticResource LB}" Height="100" Margin="0,6,0,0"/>
-
-              <TextBlock Text="Step 2 &#x2013; Search User to Add" Style="{StaticResource Lbl}" Margin="0,16,0,4"/>
-              <Grid>
-                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                <TextBox x:Name="AM_UsrSearch" Style="{StaticResource TB}"
-                         ToolTip="Enter display name or UPN prefix"/>
-                <Button x:Name="BtnAMUsrSearch" Grid.Column="1" Content="Search"
-                        Style="{StaticResource SmallBtn}" Margin="8,0,0,0"/>
-              </Grid>
-              <ListBox x:Name="AM_UsrList" Style="{StaticResource LB}" Height="120" Margin="0,6,0,0"/>
-
-              <TextBlock x:Name="AM_Status" Visibility="Collapsed" FontSize="13" Margin="0,14,0,0"/>
-              <Button x:Name="BtnAMAdd" Content="  Add Selected User to Group  "
-                      Style="{StaticResource ActionBtn}" HorizontalAlignment="Left"
-                      Margin="0,16,0,8" IsEnabled="False"/>
-            </StackPanel>
-          </ScrollViewer>
-
-          <!-- Panel: Remove Members -->
-          <ScrollViewer x:Name="PanelRemoveMembers" Visibility="Collapsed"
-                        VerticalScrollBarVisibility="Auto" Padding="30,26,30,20">
-            <StackPanel>
-              <TextBlock Text="Remove Members" FontSize="22" FontWeight="Bold" Foreground="#0F2B50"/>
-              <TextBlock Text="Select a group, load its members, then remove one or more."
-                         FontSize="12" Foreground="#667788" Margin="0,4,0,22"/>
-
-              <TextBlock Text="Step 1 &#x2013; Select Distribution Group" Style="{StaticResource Lbl}" Margin="0,0,0,4"/>
-              <Grid>
-                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                <TextBox x:Name="RM_GrpSearch" Style="{StaticResource TB}"/>
-                <Button x:Name="BtnRMGrpSearch" Grid.Column="1" Content="Search"
-                        Style="{StaticResource SmallBtn}" Margin="8,0,0,0"/>
-              </Grid>
-              <ListBox x:Name="RM_GrpList" Style="{StaticResource LB}" Height="100" Margin="0,6,0,0"/>
-
-              <TextBlock Text="Step 2 &#x2013; Load and Select Members to Remove" Style="{StaticResource Lbl}" Margin="0,16,0,4"/>
-              <Button x:Name="BtnRMLoadMembers" Content="Load Members"
-                      Style="{StaticResource SmallBtn}" HorizontalAlignment="Left"
-                      Margin="0,0,0,6" IsEnabled="False"/>
-              <ListBox x:Name="RM_MbrList" Style="{StaticResource LB}" Height="150"
-                       SelectionMode="Extended" Margin="0,0,0,0"
-                       ToolTip="Hold Ctrl or Shift to select multiple members"/>
-
-              <TextBlock x:Name="RM_Status" Visibility="Collapsed" FontSize="13" Margin="0,14,0,0"/>
-              <Button x:Name="BtnRMRemove" Content="  Remove Selected Member(s)  "
-                      Style="{StaticResource ActionBtn}" HorizontalAlignment="Left"
-                      Margin="0,16,0,8" IsEnabled="False"/>
-            </StackPanel>
-          </ScrollViewer>
-
-          <!-- Panel: Read Properties -->
-          <Grid x:Name="PanelReadProps" Visibility="Collapsed" Margin="30,26,30,20">
-            <Grid.RowDefinitions>
-              <RowDefinition Height="Auto"/>
-              <RowDefinition Height="Auto"/>
-              <RowDefinition Height="Auto"/>
-              <RowDefinition Height="Auto"/>
-              <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
-
-            <StackPanel Grid.Row="0">
-              <TextBlock Text="Read Current Properties" FontSize="22" FontWeight="Bold" Foreground="#0F2B50"/>
-              <TextBlock Text="View all properties and current members of a distribution group."
-                         FontSize="12" Foreground="#667788" Margin="0,4,0,22"/>
-              <TextBlock Text="Search Distribution Group" Style="{StaticResource Lbl}" Margin="0,0,0,4"/>
-              <Grid>
-                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                <TextBox x:Name="R_Search" Style="{StaticResource TB}"/>
-                <Button x:Name="BtnRSearch" Grid.Column="1" Content="Search"
-                        Style="{StaticResource SmallBtn}" Margin="8,0,0,0"/>
-              </Grid>
-            </StackPanel>
-
-            <ListBox x:Name="R_DGList" Grid.Row="1" Style="{StaticResource LB}"
-                     Height="100" Margin="0,6,0,0"/>
-
-            <Button x:Name="BtnRLoad" Grid.Row="2" Content="Load Properties"
-                    Style="{StaticResource SmallBtn}" HorizontalAlignment="Left"
-                    Margin="0,10,0,10" IsEnabled="False"/>
-
-            <Border x:Name="R_PropsBox" Grid.Row="3" Background="White" CornerRadius="7"
-                    BorderBrush="#D0DCE8" BorderThickness="1" Padding="14,12"
-                    Visibility="Collapsed" Margin="0,0,0,10">
-              <StackPanel x:Name="R_PropsContent"/>
-            </Border>
-
-            <Border Grid.Row="4" Background="White" CornerRadius="7"
-                    BorderBrush="#D0DCE8" BorderThickness="1" Padding="14,12"
-                    x:Name="R_MembersBox" Visibility="Collapsed">
-              <StackPanel>
-                <TextBlock x:Name="R_MemberHeader" Text="Members (0)"
-                           FontSize="13" FontWeight="SemiBold" Foreground="#0F2B50" Margin="0,0,0,6"/>
-                <ListBox x:Name="R_MbrList" Style="{StaticResource LB}" MaxHeight="180"/>
-              </StackPanel>
-            </Border>
-          </Grid>
-
-          <!-- Panel: Discover All DGs -->
-          <Grid x:Name="PanelDiscover" Visibility="Collapsed" Margin="30,26,30,20">
-            <Grid.RowDefinitions>
-              <RowDefinition Height="Auto"/>
-              <RowDefinition Height="Auto"/>
-              <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
-
-            <StackPanel Grid.Row="0">
-              <TextBlock Text="Discover All Distribution Groups" FontSize="22" FontWeight="Bold" Foreground="#0F2B50"/>
-              <TextBlock Text="Retrieve and export all mail-enabled distribution groups in your Microsoft 365 tenant."
-                         FontSize="12" Foreground="#667788" Margin="0,4,0,18"/>
-              <StackPanel Orientation="Horizontal">
-                <Button x:Name="BtnDiscoverAll" Content="  &#x1F50D;  Discover All  " Style="{StaticResource ActionBtn}"/>
-                <Button x:Name="BtnExportCSV"   Content="  &#x1F4BE;  Export to CSV  " Style="{StaticResource SmallBtn}"
-                        Margin="10,0,0,0" IsEnabled="False"/>
-              </StackPanel>
-              <TextBlock x:Name="Disc_Status" Visibility="Collapsed" FontSize="13" Margin="0,10,0,0"/>
-            </StackPanel>
-
-            <Border Grid.Row="2" Margin="0,14,0,0" Background="White" CornerRadius="7"
-                    BorderBrush="#D0DCE8" BorderThickness="1">
-              <ListView x:Name="DG_ResultList" BorderThickness="0" FontSize="12">
-                <ListView.View>
-                  <GridView>
-                    <GridViewColumn Header="Display Name"    Width="210" DisplayMemberBinding="{Binding DisplayName}"/>
-                    <GridViewColumn Header="Email Address"   Width="210" DisplayMemberBinding="{Binding Mail}"/>
-                    <GridViewColumn Header="Mail Nickname"   Width="140" DisplayMemberBinding="{Binding MailNickname}"/>
-                    <GridViewColumn Header="Description"     Width="200" DisplayMemberBinding="{Binding Description}"/>
-                    <GridViewColumn Header="Security Enabled" Width="110" DisplayMemberBinding="{Binding SecurityEnabled}"/>
-                  </GridView>
-                </ListView.View>
-              </ListView>
-            </Border>
-          </Grid>
-
+            <Button x:Name="DGBtnBack" Content="&#x2190; Back to M365"
+                    Style="{StaticResource SmallBtn}"
+                    HorizontalAlignment="Center" Margin="0,30,0,0"/>
+          </StackPanel>
         </Grid>
-      </Grid>
 
+        <!-- ═══ LAYER 2: SINGLE DG ═══ -->
+        <Grid x:Name="PanelDGSingle" Visibility="Collapsed">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="210"/>
+            <ColumnDefinition Width="*"/>
+          </Grid.ColumnDefinitions>
+
+          <!-- Sidebar -->
+          <Border Grid.Column="0" Background="#0F2B50">
+            <Grid>
+              <Grid.RowDefinitions>
+                <RowDefinition Height="68"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+              </Grid.RowDefinitions>
+              <Border Grid.Row="0" Background="#081D36" Padding="16,0">
+                <StackPanel VerticalAlignment="Center">
+                  <TextBlock Text="Single DG Operation" Foreground="White" FontSize="13" FontWeight="Bold" TextWrapping="Wrap"/>
+                  <TextBlock Text="Exchange Online" Foreground="#7AAFD4" FontSize="11"/>
+                </StackPanel>
+              </Border>
+              <StackPanel Grid.Row="1" Margin="8,14,8,0">
+                <Button x:Name="NavSingleCreate" Content="&#x2795;   Create DG"              Style="{StaticResource NavBtn}"/>
+                <Button x:Name="NavSingleSearch" Content="&#x1F50D;   Search DG"             Style="{StaticResource NavBtn}" Margin="0,3,0,0"/>
+                <Button x:Name="NavSingleUpdate" Content="&#x270F;&#xFE0F;   Update DG Settings" Style="{StaticResource NavBtn}" Margin="0,3,0,0"/>
+              </StackPanel>
+              <Border Grid.Row="2" BorderBrush="#1A3A5C" BorderThickness="0,1,0,0">
+                <StackPanel Margin="8,8,8,10">
+                  <Button x:Name="BtnSingleBackHome" Content="&#x2190; Back"
+                          Style="{StaticResource NavBtn}" Foreground="#FF8A80" FontSize="12"/>
+                </StackPanel>
+              </Border>
+            </Grid>
+          </Border>
+
+          <!-- Single content panels -->
+          <Grid Grid.Column="1">
+
+            <!-- Panel: Single Create -->
+            <ScrollViewer x:Name="PanelSingleCreate" Visibility="Visible"
+                          VerticalScrollBarVisibility="Auto" Padding="30,26,30,20">
+              <StackPanel>
+                <TextBlock Text="Create Distribution Group" FontSize="22" FontWeight="Bold" Foreground="#0F2B50"/>
+                <TextBlock Text="Creates a new mail-enabled distribution group in Exchange Online."
+                           FontSize="12" Foreground="#667788" Margin="0,4,0,22"/>
+                <TextBlock Text="Display Name *" Style="{StaticResource Lbl}"/>
+                <TextBox x:Name="C_DisplayName" Style="{StaticResource TB}"
+                         ToolTip="Name shown in the Global Address List"/>
+                <TextBlock Text="Email Alias (MailNickname) *" Style="{StaticResource Lbl}"/>
+                <TextBox x:Name="C_MailNickname" Style="{StaticResource TB}"
+                         ToolTip="Part before @ in the email address. No spaces or special characters."/>
+                <CheckBox x:Name="C_SecurityEnabled"
+                          Content="Also enable as Security Group"
+                          Margin="0,14,0,0" FontSize="13" Foreground="#2C3E50"/>
+                <TextBlock x:Name="C_Status" Visibility="Collapsed" FontSize="13" Margin="0,16,0,0"/>
+                <Button x:Name="BtnCreate" Content="  Create Distribution Group  "
+                        Style="{StaticResource ActionBtn}" HorizontalAlignment="Left" Margin="0,20,0,8"/>
+              </StackPanel>
+            </ScrollViewer>
+
+            <!-- Panel: Single Search -->
+            <ScrollViewer x:Name="PanelSingleSearch" Visibility="Collapsed"
+                          VerticalScrollBarVisibility="Auto" Padding="30,26,30,20">
+              <StackPanel>
+                <TextBlock Text="Search Distribution Group" FontSize="22" FontWeight="Bold" Foreground="#0F2B50"/>
+                <TextBlock Text="Search for a distribution group, view properties and manage members."
+                           FontSize="12" Foreground="#667788" Margin="0,4,0,22"/>
+                <TextBlock Text="Search Distribution Group" Style="{StaticResource Lbl}" Margin="0,0,0,4"/>
+                <Grid>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                  </Grid.ColumnDefinitions>
+                  <TextBox x:Name="S_Search" Style="{StaticResource TB}" ToolTip="Enter display name or email prefix"/>
+                  <Button x:Name="BtnSSearch" Grid.Column="1" Content="Search"
+                          Style="{StaticResource SmallBtn}" Margin="8,0,0,0"/>
+                </Grid>
+                <ListBox x:Name="S_DGList" Style="{StaticResource LB}" Height="110" Margin="0,6,0,0"/>
+                <Border x:Name="S_PropsBox" Visibility="Collapsed"
+                        Background="White" CornerRadius="7" Padding="14,12"
+                        Margin="0,12,0,0" BorderBrush="#D0DCE8" BorderThickness="1">
+                  <StackPanel x:Name="S_PropsContent"/>
+                </Border>
+                <Border x:Name="S_MembersBox" Visibility="Collapsed"
+                        Background="White" CornerRadius="7" Padding="14,12"
+                        Margin="0,10,0,0" BorderBrush="#D0DCE8" BorderThickness="1">
+                  <StackPanel>
+                    <TextBlock x:Name="S_MemberHeader" Text="Members (0)"
+                               FontSize="13" FontWeight="SemiBold" Foreground="#0F2B50" Margin="0,0,0,6"/>
+                    <ListBox x:Name="S_MbrList" Style="{StaticResource LB}"
+                             MaxHeight="140" SelectionMode="Extended"/>
+                    <Button x:Name="BtnSRemoveMember" Content="Remove Selected Member(s)"
+                            Style="{StaticResource SmallBtn}" HorizontalAlignment="Left"
+                            Margin="0,8,0,0" IsEnabled="False"/>
+                    <TextBlock Text="Add Member" FontSize="12" FontWeight="SemiBold"
+                               Foreground="#2C3E50" Margin="0,16,0,6"/>
+                    <Grid>
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                      </Grid.ColumnDefinitions>
+                      <TextBox x:Name="S_AddUsrSearch" Style="{StaticResource TB}"
+                               ToolTip="Search user by display name or UPN"/>
+                      <Button x:Name="BtnSAddUsrSearch" Grid.Column="1" Content="Search"
+                              Style="{StaticResource SmallBtn}" Margin="8,0,0,0"/>
+                    </Grid>
+                    <ListBox x:Name="S_AddUsrList" Style="{StaticResource LB}"
+                             Height="80" Margin="0,6,0,0"/>
+                    <Button x:Name="BtnSAddMember" Content="Add Selected User"
+                            Style="{StaticResource SmallBtn}" HorizontalAlignment="Left"
+                            Margin="0,8,0,0" IsEnabled="False"/>
+                  </StackPanel>
+                </Border>
+                <TextBlock x:Name="S_Status" Visibility="Collapsed" FontSize="13" Margin="0,10,0,0"/>
+              </StackPanel>
+            </ScrollViewer>
+
+            <!-- Panel: Single Update -->
+            <ScrollViewer x:Name="PanelSingleUpdate" Visibility="Collapsed"
+                          VerticalScrollBarVisibility="Auto" Padding="30,26,30,20">
+              <StackPanel>
+                <TextBlock Text="Update DG Settings" FontSize="22" FontWeight="Bold" Foreground="#0F2B50"/>
+                <TextBlock Text="Search for a distribution group and update its settings."
+                           FontSize="12" Foreground="#667788" Margin="0,4,0,22"/>
+                <TextBlock Text="Search Distribution Group" Style="{StaticResource Lbl}" Margin="0,0,0,4"/>
+                <Grid>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                  </Grid.ColumnDefinitions>
+                  <TextBox x:Name="UP_Search" Style="{StaticResource TB}" ToolTip="Enter display name or email prefix"/>
+                  <Button x:Name="BtnUPSearch" Grid.Column="1" Content="Search"
+                          Style="{StaticResource SmallBtn}" Margin="8,0,0,0"/>
+                </Grid>
+                <ListBox x:Name="UP_DGList" Style="{StaticResource LB}" Height="110" Margin="0,6,0,0"/>
+                <Border x:Name="UP_FieldsPanel" Visibility="Collapsed"
+                        Background="White" CornerRadius="7" Padding="16,14"
+                        Margin="0,16,0,0" BorderBrush="#D0DCE8" BorderThickness="1">
+                  <StackPanel>
+                    <TextBlock Text="Edit Settings" FontSize="14" FontWeight="SemiBold"
+                               Foreground="#0F2B50" Margin="0,0,0,8"/>
+                    <TextBlock Text="New Display Name" Style="{StaticResource Lbl}" Margin="0,0,0,4"/>
+                    <TextBox x:Name="UP_DisplayName" Style="{StaticResource TB}"/>
+                    <TextBlock x:Name="UP_Status" Visibility="Collapsed" FontSize="13" Margin="0,14,0,0"/>
+                    <Button x:Name="BtnUPSave" Content="  Save Changes  "
+                            Style="{StaticResource ActionBtn}" HorizontalAlignment="Left" Margin="0,16,0,4"/>
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+            </ScrollViewer>
+
+          </Grid>
+        </Grid>
+
+        <!-- ═══ LAYER 3: BULK DG ═══ -->
+        <Grid x:Name="PanelDGBulk" Visibility="Collapsed">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="210"/>
+            <ColumnDefinition Width="*"/>
+          </Grid.ColumnDefinitions>
+
+          <!-- Sidebar -->
+          <Border Grid.Column="0" Background="#0F2B50">
+            <Grid>
+              <Grid.RowDefinitions>
+                <RowDefinition Height="68"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+              </Grid.RowDefinitions>
+              <Border Grid.Row="0" Background="#081D36" Padding="16,0">
+                <StackPanel VerticalAlignment="Center">
+                  <TextBlock Text="Bulk Operation" Foreground="White" FontSize="13" FontWeight="Bold" TextWrapping="Wrap"/>
+                  <TextBlock Text="Exchange Online" Foreground="#7AAFD4" FontSize="11"/>
+                </StackPanel>
+              </Border>
+              <StackPanel Grid.Row="1" Margin="8,14,8,0">
+                <Button x:Name="NavBulkDiscover" Content="&#x1F50D;   Discover All DGs"       Style="{StaticResource NavBtn}"/>
+                <Button x:Name="NavBulkCreate"   Content="&#x2795;   Bulk Create DGs"         Style="{StaticResource NavBtn}" Margin="0,3,0,0"/>
+                <Button x:Name="NavBulkUpdate"   Content="&#x270F;&#xFE0F;   Bulk Update DG Settings" Style="{StaticResource NavBtn}" Margin="0,3,0,0"/>
+              </StackPanel>
+              <Border Grid.Row="2" BorderBrush="#1A3A5C" BorderThickness="0,1,0,0">
+                <StackPanel Margin="8,8,8,10">
+                  <Button x:Name="BtnBulkBackHome" Content="&#x2190; Back"
+                          Style="{StaticResource NavBtn}" Foreground="#FF8A80" FontSize="12"/>
+                </StackPanel>
+              </Border>
+            </Grid>
+          </Border>
+
+          <!-- Bulk content panels -->
+          <Grid Grid.Column="1">
+
+            <!-- Panel: Bulk Discover -->
+            <Grid x:Name="PanelBulkDiscover" Visibility="Visible" Margin="30,26,30,20">
+              <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+              </Grid.RowDefinitions>
+              <StackPanel Grid.Row="0">
+                <TextBlock Text="Discover All Distribution Groups" FontSize="22" FontWeight="Bold" Foreground="#0F2B50"/>
+                <TextBlock Text="Retrieve and export all distribution groups from your Microsoft 365 tenant."
+                           FontSize="12" Foreground="#667788" Margin="0,4,0,18"/>
+                <StackPanel Orientation="Horizontal">
+                  <Button x:Name="BtnDiscoverAll" Content="  &#x1F50D;  Discover All  " Style="{StaticResource ActionBtn}"/>
+                  <Button x:Name="BtnExportCSV"   Content="  &#x1F4BE;  Export to CSV  " Style="{StaticResource SmallBtn}"
+                          Margin="10,0,0,0" IsEnabled="False"/>
+                </StackPanel>
+                <TextBlock x:Name="Disc_Status" Visibility="Collapsed" FontSize="13" Margin="0,10,0,0"/>
+              </StackPanel>
+              <Border Grid.Row="2" Margin="0,14,0,0" Background="White" CornerRadius="7"
+                      BorderBrush="#D0DCE8" BorderThickness="1">
+                <ListView x:Name="DG_ResultList" BorderThickness="0" FontSize="12">
+                  <ListView.View>
+                    <GridView>
+                      <GridViewColumn Header="Display Name"     Width="220" DisplayMemberBinding="{Binding DisplayName}"/>
+                      <GridViewColumn Header="Email Address"    Width="220" DisplayMemberBinding="{Binding Mail}"/>
+                      <GridViewColumn Header="Alias"            Width="140" DisplayMemberBinding="{Binding MailNickname}"/>
+                      <GridViewColumn Header="Security Enabled" Width="110" DisplayMemberBinding="{Binding SecurityEnabled}"/>
+                    </GridView>
+                  </ListView.View>
+                </ListView>
+              </Border>
+            </Grid>
+
+            <!-- Panel: Bulk Create -->
+            <ScrollViewer x:Name="PanelBulkCreate" Visibility="Collapsed"
+                          VerticalScrollBarVisibility="Auto" Padding="30,26,30,20">
+              <StackPanel>
+                <TextBlock Text="Bulk Create Distribution Groups" FontSize="22" FontWeight="Bold" Foreground="#0F2B50"/>
+                <TextBlock Text="Enter one distribution group per line in CSV format."
+                           FontSize="12" Foreground="#667788" Margin="0,4,0,8"/>
+                <TextBlock Text="Format: DisplayName, Alias, Type (Distribution or Security)"
+                           FontSize="11" Foreground="#667788" Margin="0,0,0,12"/>
+                <TextBox x:Name="BC_CsvText" Height="160" AcceptsReturn="True"
+                         FontFamily="Consolas" FontSize="12"
+                         Style="{StaticResource TB}" VerticalScrollBarVisibility="Auto"
+                         TextWrapping="NoWrap"/>
+                <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                  <Button x:Name="BtnBCBrowse" Content="&#x1F4C2; Import CSV File" Style="{StaticResource SmallBtn}"/>
+                  <Button x:Name="BtnBCCreate" Content="&#x25B6; Create All"
+                          Style="{StaticResource ActionBtn}" Margin="10,0,0,0"/>
+                </StackPanel>
+                <TextBlock x:Name="BC_Status" Visibility="Collapsed" FontSize="13" Margin="0,10,0,0"/>
+                <ListBox x:Name="BC_ResultList" Style="{StaticResource LB}"
+                         Height="160" Margin="0,10,0,0"/>
+              </StackPanel>
+            </ScrollViewer>
+
+            <!-- Panel: Bulk Update -->
+            <ScrollViewer x:Name="PanelBulkUpdate" Visibility="Collapsed"
+                          VerticalScrollBarVisibility="Auto" Padding="30,26,30,20">
+              <StackPanel>
+                <TextBlock Text="Bulk Update DG Settings" FontSize="22" FontWeight="Bold" Foreground="#0F2B50"/>
+                <TextBlock Text="Update display names and membership for multiple groups at once."
+                           FontSize="12" Foreground="#667788" Margin="0,4,0,8"/>
+                <TextBlock Text="Format: Identity(email), NewDisplayName, AddMember(UPN), RemoveMember(UPN)"
+                           FontSize="11" Foreground="#667788" Margin="0,0,0,12"/>
+                <TextBox x:Name="BU_CsvText" Height="160" AcceptsReturn="True"
+                         FontFamily="Consolas" FontSize="12"
+                         Style="{StaticResource TB}" VerticalScrollBarVisibility="Auto"
+                         TextWrapping="NoWrap"/>
+                <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                  <Button x:Name="BtnBUBrowse" Content="&#x1F4C2; Import CSV File" Style="{StaticResource SmallBtn}"/>
+                  <Button x:Name="BtnBUApply" Content="&#x25B6; Apply Updates"
+                          Style="{StaticResource ActionBtn}" Margin="10,0,0,0"/>
+                </StackPanel>
+                <TextBlock x:Name="BU_Status" Visibility="Collapsed" FontSize="13" Margin="0,10,0,0"/>
+                <ListBox x:Name="BU_ResultList" Style="{StaticResource LB}"
+                         Height="160" Margin="0,10,0,0"/>
+              </StackPanel>
+            </ScrollViewer>
+
+          </Grid>
+        </Grid>
+
+      </Grid>
       <!-- ─────────────────── VIEW: SHARED MAILBOX ─────────────────── -->
       <Grid x:Name="ViewSM" Visibility="Collapsed">
         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
@@ -820,6 +883,7 @@ function Show-MainWindow {
         $script:CurrentView   = "DG"
         Update-M365ConnStatus
         Write-MigrazeLog "Distribution Groups management opened." "Info"
+        if (Get-Command 'Show-DGHomePanel' -ErrorAction SilentlyContinue) { Show-DGHomePanel }
     }
 
     function script:Show-SMView {
