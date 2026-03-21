@@ -1,4 +1,4 @@
-# UserMailbox.ps1 - User Mailbox management window (coming soon)
+﻿# UserMailbox.ps1 - User Mailbox management window (coming soon)
 
 function Show-UserMailboxWindow {
     param([System.Windows.Window]$Owner)
