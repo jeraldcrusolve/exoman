@@ -1,4 +1,4 @@
-# GraphHelper.ps1 - Microsoft Graph authentication and shared utility functions
+﻿# GraphHelper.ps1 - Microsoft Graph authentication and shared utility functions
 
 $script:IsGraphConnected = $false
 $script:GraphAccount     = $null
