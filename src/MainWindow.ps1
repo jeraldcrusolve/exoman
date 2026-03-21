@@ -415,16 +415,17 @@ function Show-MainWindow {
 
     function Update-M365ConnStatus {
         $connected = Get-MigrazeConnectionStatus
-        if ($connected) {
+        if ($connected.Connected) {
             $connDot.Fill         = [Windows.Media.SolidColorBrush]([Windows.Media.ColorConverter]::ConvertFromString("#00C853"))
             $connText.Text        = "Connected"
             $connText.Foreground  = [Windows.Media.SolidColorBrush]([Windows.Media.ColorConverter]::ConvertFromString("#AAFFCC"))
             $connBadge.Background = [Windows.Media.SolidColorBrush]([Windows.Media.ColorConverter]::ConvertFromString("#0C2A10"))
             $btnConnText.Text     = "Disconnect"
             $btnConnect.Background= [Windows.Media.SolidColorBrush]([Windows.Media.ColorConverter]::ConvertFromString("#C62828"))
-            $infoMsg = if ($script:M365TenantDomain) { "Connected to: $($script:M365TenantDomain)" } else { "Connected to Microsoft 365." }
+            $infoMsg = if ($connected.Account) { "Connected as: $($connected.Account)" } elseif ($script:GraphAccount) { "Connected as: $($script:GraphAccount)" } else { "Connected to Microsoft 365." }
             $tenantInfo.Text      = $infoMsg
-            $footerText.Text      = "Migraze v2.0  |  Microsoft 365  |  $($script:M365TenantDomain)"
+            $acctLabel = if ($connected.Account) { $connected.Account } elseif ($script:GraphAccount) { $script:GraphAccount } else { "M365" }
+            $footerText.Text      = "Migraze v2.0  |  Microsoft 365  |  $acctLabel"
             $btnDG.IsEnabled = $true; $btnSM.IsEnabled = $true; $btnUM.IsEnabled = $true
         } else {
             $connDot.Fill         = [Windows.Media.SolidColorBrush]([Windows.Media.ColorConverter]::ConvertFromString("#FF5252"))
@@ -445,7 +446,7 @@ function Show-MainWindow {
     $btnBack.Add_Click({ Show-HomeView })
 
     $btnConnect.Add_Click({
-        if (Get-MigrazeConnectionStatus) {
+        if ((Get-MigrazeConnectionStatus).Connected) {
             Write-MigrazeLog "Disconnecting from Microsoft 365..." "Action"
             Disconnect-MigrazeGraph
         } else {
