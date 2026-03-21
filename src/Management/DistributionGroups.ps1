@@ -227,7 +227,7 @@ function Initialize-DGView {
         if (-not $grp -or -not $usr) { Set-DGStatusText $script:amStatus "Select both a group and a user." "error"; return }
         $script:mainWindow.Cursor = [System.Windows.Input.Cursors]::Wait
         $script:btnAMAdd.IsEnabled = $false
-        $result = Add-DGMember -GroupId $grp.Id -UserId $usr.Id
+        $result = Add-DGMember -GroupId $grp.Id -UserId $usr.UPN
         $script:mainWindow.Cursor = $null
         $script:btnAMAdd.IsEnabled = $true
         if ($result.Success) {
@@ -276,8 +276,8 @@ function Initialize-DGView {
             foreach ($m in $result.Members) {
                 $item = [PSCustomObject]@{
                     Id          = $m.Id
-                    DisplayName = if ($m.AdditionalProperties.displayName) { $m.AdditionalProperties.displayName } else { $m.Id }
-                    ToString    = if ($m.AdditionalProperties.displayName) { "$($m.AdditionalProperties.displayName)  ($($m.AdditionalProperties.userPrincipalName))" } else { $m.Id }
+                    DisplayName = $m.DisplayName
+                    ToString    = $m.ToString
                 }
                 $script:rmMbrList.Items.Add($item) | Out-Null
             }
@@ -369,12 +369,10 @@ function Initialize-DGView {
         $props = [ordered]@{
             "Display Name"    = $g.DisplayName
             "Email Address"   = $g.Mail
-            "Mail Nickname"   = $g.MailNickname
+            "Alias"           = $g.Alias
             "Description"     = if ($g.Description) { $g.Description } else { "(none)" }
-            "Mail Enabled"    = $g.MailEnabled
             "Security Enabled"= $g.SecurityEnabled
             "Group ID"        = $g.Id
-            "Created"         = if ($g.CreatedDateTime) { $g.CreatedDateTime.ToString("yyyy-MM-dd HH:mm UTC") } else { "---" }
         }
         foreach ($k in $props.Keys) {
             $row = [System.Windows.Controls.Grid]::new()
@@ -400,9 +398,7 @@ function Initialize-DGView {
         $script:rMbrList.Items.Clear()
         $script:rMbrHeader.Text = "Members ($($result.Members.Count))"
         foreach ($m in $result.Members) {
-            $dn  = if ($m.AdditionalProperties.displayName) { $m.AdditionalProperties.displayName } else { $m.Id }
-            $upn = if ($m.AdditionalProperties.userPrincipalName) { " ($($m.AdditionalProperties.userPrincipalName))" } else { "" }
-            $script:rMbrList.Items.Add("$dn$upn") | Out-Null
+            $script:rMbrList.Items.Add($m.ToString) | Out-Null
         }
         $script:rMembersBox.Visibility = "Visible"
     })
