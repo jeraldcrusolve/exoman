@@ -1,4 +1,4 @@
-﻿# GraphHelper.ps1 - Microsoft Graph authentication and shared utility functions
+# GraphHelper.ps1 - Microsoft Graph authentication and shared utility functions
 
 $script:IsGraphConnected       = $false
 $script:GraphAccount           = $null
@@ -28,6 +28,10 @@ $script:LogBox        = $null
 $script:LogEntryCount = 0
 $script:LogCountLabel = $null
 $script:LogAutoScroll = $null
+
+$script:IsTargetGraphConnected = $false
+$script:TargetGraphAccount = $null
+$script:TargetGraphTenantId = $null
 
 function Write-MigrazeLog {
     param(
@@ -71,15 +75,7 @@ function Write-MigrazeLog {
     if ($script:LogCountLabel) { $script:LogCountLabel.Text = "  ($($script:LogEntryCount) entries)" }
     if ($script:LogAutoScroll -and $script:LogAutoScroll.IsChecked) { $script:LogBox.ScrollToEnd() }
 }
-
-function Write-ExoLog {
-    param(
-        [string]$Message,
-        [ValidateSet("Info","Success","Error","Warning","Action")]
-        [string]$Level = "Info"
-    )
-    Write-MigrazeLog -Message $Message -Level $Level
-}
+Set-Alias -Name Write-ExoLog -Value Write-MigrazeLog -Scope Script
 
 function Test-GraphModules {
     $missing = @()
@@ -332,4 +328,55 @@ function Search-MigrazeUsers {
     }
 }
 
-function Search-ExoManUsers { param([string]$Query); Search-MigrazeUsers -Query $Query }
+function Search-MigrazeUsers { param([string]$Query); Search-MigrazeUsers -Query $Query }
+function Connect-MigrazeTargetGraph {
+    <#
+    .SYNOPSIS Opens a browser-based Microsoft 365 login for the target tenant.
+    #>
+    try {
+        $missing = Test-GraphModules
+        if ($missing.Count -gt 0) {
+            Write-MigrazeLog "Missing required modules: $($missing -join ', ')" "Warning"
+            $answer = [System.Windows.MessageBox]::Show(
+                "The following modules are required but not installed:`n`n$($missing -join "`n")`n`nInstall them now? (Requires internet access)",
+                "Migraze - Missing Modules",
+                [System.Windows.MessageBoxButton]::YesNo,
+                [System.Windows.MessageBoxImage]::Question
+            )
+            if ($answer -ne [System.Windows.MessageBoxResult]::Yes) {
+                throw "Required modules not installed."
+            }
+            Install-GraphModules -Modules $missing
+        }
+
+        Write-MigrazeLog "Loading Microsoft Graph modules for target tenant..." "Info"
+        Import-GraphModules
+
+        Write-MigrazeLog "Opening browser for Target Tenant Microsoft 365 authentication..." "Action"
+        Connect-MgGraph -Scopes $script:GraphScopes -NoWelcome -ErrorAction Stop
+
+        $ctx = Get-MgContext
+        if ($ctx -and $ctx.Account) {
+            $script:IsTargetGraphConnected = $true
+            $script:TargetGraphAccount     = $ctx.Account
+            $script:TargetGraphTenantId    = $ctx.TenantId
+            Write-MigrazeLog "Target tenant Graph connection established." "Success"
+            return @{ Success = $true; Account = $ctx.Account; TenantId = $ctx.TenantId }
+        }
+        throw "Login completed but no session context found."
+
+    } catch {
+        $script:IsTargetGraphConnected = $false
+        $script:TargetGraphAccount     = $null
+        Write-MigrazeLog "Target connection error: $($_.Exception.Message)" "Error"
+        return @{ Success = $false; Error = $_.Exception.Message }
+    }
+}
+
+function Disconnect-MigrazeTargetGraph {
+    try { Disconnect-MgGraph -ErrorAction SilentlyContinue } catch {}
+    $script:IsTargetGraphConnected = $false
+    $script:TargetGraphAccount     = $null
+    $script:TargetGraphTenantId    = $null
+    Write-MigrazeLog "Disconnected from target tenant." "Info"
+}
