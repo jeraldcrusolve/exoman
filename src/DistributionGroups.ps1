@@ -1,4 +1,4 @@
-# DistributionGroups.ps1 - Distribution Group management window
+﻿# DistributionGroups.ps1 - Distribution Group management window
 
 function Show-DistributionGroupsWindow {
     param([System.Windows.Window]$Owner)
