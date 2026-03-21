@@ -52,6 +52,11 @@ try {
     $script:AppVersion = "2.0"
     $script:AppTitle   = "Migraze"
 
+    # ---- Pre-load ExchangeOnlineManagement BEFORE Graph to win MSAL AppDomain race ----
+    if (Get-Module -ListAvailable -Name ExchangeOnlineManagement -ErrorAction SilentlyContinue) {
+        Import-Module ExchangeOnlineManagement -Force -ErrorAction SilentlyContinue
+    }
+
     # ---- Source modules (order matters) ----
     $srcFiles = @(
         "src\GraphHelper.ps1",
