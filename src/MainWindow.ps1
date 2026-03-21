@@ -1,4 +1,4 @@
-# MainWindow.ps1 - Migraze v2.0 main application window (single-window navigation)
+﻿# MainWindow.ps1 - Migraze v2.0 main application window (single-window navigation)
 
 function Show-MainWindow {
 
@@ -750,6 +750,7 @@ function Show-MainWindow {
 
     $reader = [System.Xml.XmlNodeReader]::new($xaml)
     $window = [Windows.Markup.XamlReader]::Load($reader)
+    $script:mainWindow = $window
 
     # ── Shared log wiring ──────────────────────────────────────────────────────
     $script:LogBox        = $window.FindName("LogBox")
