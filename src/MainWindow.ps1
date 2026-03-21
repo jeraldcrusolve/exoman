@@ -890,7 +890,7 @@ function Show-MainWindow {
         } else {
             Write-MigrazeLog "Opening browser for Microsoft 365 login..." "Action"
             $ok = Connect-MigrazeGraph
-            if ($ok) { Write-MigrazeLog "Successfully connected to Microsoft 365." "Success" }
+            if ($ok.Success) { Write-MigrazeLog "Successfully connected to Microsoft 365." "Success" }
         }
         Update-M365ConnStatus
     })
