@@ -135,6 +135,7 @@ function Show-DistributionGroupsWindow {
           <Button x:Name="NavAddMembers"    Content="👤+  Add Members"                Style="{StaticResource NavBtn}" Margin="0,3,0,0"/>
           <Button x:Name="NavRemoveMembers" Content="👤–  Remove Members"             Style="{StaticResource NavBtn}" Margin="0,3,0,0"/>
           <Button x:Name="NavReadProps"     Content="📋   Read Current Properties"    Style="{StaticResource NavBtn}" Margin="0,3,0,0"/>
+          <Button x:Name="NavDiscover"      Content="🔍   Discover All DGs"           Style="{StaticResource NavBtn}" Margin="0,3,0,0"/>
         </StackPanel>
 
         <Border Grid.Row="2" BorderBrush="#1A3A5C" BorderThickness="0,1,0,0">
@@ -338,6 +339,42 @@ function Show-DistributionGroupsWindow {
         </Border>
       </Grid>
 
+      <!-- ─── Panel: Discover All DGs ─── -->
+      <Grid x:Name="PanelDiscover" Visibility="Collapsed" Margin="30,26,30,20">
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto"/>
+          <RowDefinition Height="Auto"/>
+          <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0">
+          <TextBlock Text="Discover All Distribution Groups" FontSize="22" FontWeight="Bold" Foreground="#0F2B50"/>
+          <TextBlock Text="Retrieve and export all mail-enabled distribution groups in your Microsoft 365 tenant."
+                     FontSize="12" Foreground="#667788" Margin="0,4,0,18"/>
+          <StackPanel Orientation="Horizontal">
+            <Button x:Name="BtnDiscoverAll" Content="  🔍  Discover All  " Style="{StaticResource ActionBtn}"/>
+            <Button x:Name="BtnExportCSV"   Content="  💾  Export to CSV  " Style="{StaticResource SmallBtn}"
+                    Margin="10,0,0,0" IsEnabled="False"/>
+          </StackPanel>
+          <TextBlock x:Name="Disc_Status" Visibility="Collapsed" FontSize="13" Margin="0,10,0,0"/>
+        </StackPanel>
+
+        <Border Grid.Row="2" Margin="0,14,0,0" Background="White" CornerRadius="7"
+                BorderBrush="#D0DCE8" BorderThickness="1">
+          <ListView x:Name="DG_ResultList" BorderThickness="0" FontSize="12">
+            <ListView.View>
+              <GridView>
+                <GridViewColumn Header="Display Name"    Width="210" DisplayMemberBinding="{Binding DisplayName}"/>
+                <GridViewColumn Header="Email Address"   Width="210" DisplayMemberBinding="{Binding Mail}"/>
+                <GridViewColumn Header="Mail Nickname"   Width="140" DisplayMemberBinding="{Binding MailNickname}"/>
+                <GridViewColumn Header="Description"     Width="200" DisplayMemberBinding="{Binding Description}"/>
+                <GridViewColumn Header="Security Enabled" Width="110" DisplayMemberBinding="{Binding SecurityEnabled}"/>
+              </GridView>
+            </ListView.View>
+          </ListView>
+        </Border>
+      </Grid>
+
     </Grid><!-- end content grid -->
   </Grid>
 </Window>
@@ -353,6 +390,7 @@ function Show-DistributionGroupsWindow {
     $navAddMembers    = $window.FindName("NavAddMembers")
     $navRemoveMembers = $window.FindName("NavRemoveMembers")
     $navReadProps     = $window.FindName("NavReadProps")
+    $navDiscover      = $window.FindName("NavDiscover")
     $navClose         = $window.FindName("NavClose")
 
     $pCreate        = $window.FindName("PanelCreate")
@@ -360,9 +398,10 @@ function Show-DistributionGroupsWindow {
     $pAddMembers    = $window.FindName("PanelAddMembers")
     $pRemoveMembers = $window.FindName("PanelRemoveMembers")
     $pReadProps     = $window.FindName("PanelReadProps")
+    $pDiscover      = $window.FindName("PanelDiscover")
 
-    $allPanels  = @($pCreate, $pUpdate, $pAddMembers, $pRemoveMembers, $pReadProps)
-    $allNavBtns = @($navCreate, $navUpdate, $navAddMembers, $navRemoveMembers, $navReadProps)
+    $allPanels  = @($pCreate, $pUpdate, $pAddMembers, $pRemoveMembers, $pReadProps, $pDiscover)
+    $allNavBtns = @($navCreate, $navUpdate, $navAddMembers, $navRemoveMembers, $navReadProps, $navDiscover)
 
     # ── Nav panel switching ──
     $activeNavColor   = [Windows.Media.SolidColorBrush]([Windows.Media.ColorConverter]::ConvertFromString("#0078D4"))
@@ -383,6 +422,7 @@ function Show-DistributionGroupsWindow {
     $navAddMembers.Add_Click({    Switch-DGPanel 2 })
     $navRemoveMembers.Add_Click({ Switch-DGPanel 3 })
     $navReadProps.Add_Click({     Switch-DGPanel 4 })
+    $navDiscover.Add_Click({      Switch-DGPanel 5 })
     $navClose.Add_Click({         Write-MigrazeLog "Closed Distribution Groups window." "Info"; $window.Close() })
 
     # ─────────────────────────────────────────────────────
@@ -542,7 +582,7 @@ function Show-DistributionGroupsWindow {
         $q = $amUsrSearch.Text.Trim()
         if (-not $q) { return }
         $window.Cursor = [System.Windows.Input.Cursors]::Wait
-        $result = Search-ExoManUsers -Query $q
+        $result = Search-MigrazeUsers -Query $q
         $window.Cursor = $null
         $amUsrList.Items.Clear()
         if ($result.Success) {
@@ -753,6 +793,63 @@ function Show-DistributionGroupsWindow {
             $rMbrList.Items.Add("$dn$upn") | Out-Null
         }
         $rMembersBox.Visibility = "Visible"
+    })
+
+    # ─────────────────────────────────────────────────────
+    # ── DISCOVER ALL DGs ──
+    # ─────────────────────────────────────────────────────
+    $discStatus    = $window.FindName("Disc_Status")
+    $dgResultList  = $window.FindName("DG_ResultList")
+    $btnDiscoverAll= $window.FindName("BtnDiscoverAll")
+    $btnExportCSV  = $window.FindName("BtnExportCSV")
+    $script:DiscoveredDGs = @()
+
+    $btnDiscoverAll.Add_Click({
+        Set-StatusText $discStatus "Discovering all distribution groups… please wait." "info"
+        $window.Cursor     = [System.Windows.Input.Cursors]::Wait
+        $btnDiscoverAll.IsEnabled = $false
+        $btnExportCSV.IsEnabled   = $false
+        $dgResultList.Items.Clear()
+
+        $result = Get-AllDGsForDiscovery
+        $window.Cursor     = $null
+        $btnDiscoverAll.IsEnabled = $true
+
+        if ($result.Success) {
+            $script:DiscoveredDGs = $result.Groups
+            foreach ($g in $result.Groups) {
+                $item = [PSCustomObject]@{
+                    DisplayName     = $g.DisplayName
+                    Mail            = if ($g.Mail) { $g.Mail } else { "" }
+                    MailNickname    = if ($g.MailNickname) { $g.MailNickname } else { "" }
+                    Description     = if ($g.Description) { $g.Description } else { "" }
+                    SecurityEnabled = $g.SecurityEnabled
+                }
+                $dgResultList.Items.Add($item) | Out-Null
+            }
+            Set-StatusText $discStatus "✔  Found $($result.Groups.Count) distribution group(s)." "success"
+            $btnExportCSV.IsEnabled = ($result.Groups.Count -gt 0)
+        } else {
+            Set-StatusText $discStatus "✖  Discovery failed: $($result.Error)" "error"
+        }
+    })
+
+    $btnExportCSV.Add_Click({
+        if ($script:DiscoveredDGs.Count -eq 0) { return }
+        $dlg = [Microsoft.Win32.SaveFileDialog]::new()
+        $dlg.Title      = "Export Distribution Groups to CSV"
+        $dlg.Filter     = "CSV Files (*.csv)|*.csv"
+        $dlg.FileName   = "DistributionGroups_$(Get-Date -Format 'yyyyMMdd_HHmm').csv"
+        if ($dlg.ShowDialog() -eq $true) {
+            try {
+                $script:DiscoveredDGs | Select-Object DisplayName, Mail, MailNickname, Description, SecurityEnabled |
+                    Export-Csv -Path $dlg.FileName -NoTypeInformation -Encoding UTF8
+                Write-MigrazeLog "Exported $($script:DiscoveredDGs.Count) DGs to $($dlg.FileName)" "Success"
+                Set-StatusText $discStatus "✔  Exported to $($dlg.FileName)" "success"
+            } catch {
+                Set-StatusText $discStatus "✖  Export failed: $($_.Exception.Message)" "error"
+            }
+        }
     })
 
     $window.ShowDialog() | Out-Null
