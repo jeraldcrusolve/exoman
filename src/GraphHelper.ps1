@@ -278,9 +278,6 @@ function New-DGGroup {
         $type = if ($SecurityEnabled) { "Security" } else { "Distribution" }
         Write-MigrazeLog "Creating $type group '$DisplayName' (alias: $MailNickname)..." "Action"
         $group = New-DistributionGroup -Name $DisplayName -Alias $MailNickname -Type $type -ErrorAction Stop
-        if ($Description) {
-            Set-DistributionGroup -Identity $group.PrimarySmtpAddress -Notes $Description -ErrorAction SilentlyContinue
-        }
         Write-MigrazeLog "Distribution group created: $($group.PrimarySmtpAddress)" "Success"
         return @{ Success = $true; Group = $group }
     } catch {
@@ -295,8 +292,7 @@ function Update-DGGroup {
         Invoke-EXOCommand
         Write-MigrazeLog "Updating distribution group '$GroupId'..." "Action"
         $params = @{ Identity = $GroupId; ErrorAction = "Stop" }
-        if ($DisplayName)           { $params.DisplayName = $DisplayName }
-        if ($null -ne $Description -and $Description -ne "") { $params.Notes = $Description }
+        if ($DisplayName) { $params.DisplayName = $DisplayName }
         Set-DistributionGroup @params
         Write-MigrazeLog "Group properties updated successfully." "Success"
         return @{ Success = $true }
