@@ -7,10 +7,10 @@ function Show-MainWindow {
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     Title="ExoMan v1.0 – Exchange Online Management"
-    Width="780" Height="530"
-    MinWidth="700" MinHeight="480"
+    Width="820" Height="700"
+    MinWidth="720" MinHeight="600"
     WindowStartupLocation="CenterScreen"
-    ResizeMode="CanMinimize"
+    ResizeMode="CanResizeWithGrip"
     Background="#F0F4F8">
 
   <Window.Resources>
@@ -98,8 +98,10 @@ function Show-MainWindow {
     <Grid.RowDefinitions>
       <RowDefinition Height="72"/>   <!-- Header -->
       <RowDefinition Height="Auto"/> <!-- Status bar -->
-      <RowDefinition Height="*"/>    <!-- Feature tiles -->
-      <RowDefinition Height="36"/>   <!-- Footer -->
+      <RowDefinition Height="*" MinHeight="180"/>    <!-- Feature tiles -->
+      <RowDefinition Height="5"/>    <!-- Splitter -->
+      <RowDefinition Height="180" MinHeight="120"/>  <!-- Activity log -->
+      <RowDefinition Height="30"/>   <!-- Footer -->
     </Grid.RowDefinitions>
 
     <!-- ═══════════════════ HEADER ═══════════════════ -->
@@ -214,12 +216,59 @@ function Show-MainWindow {
       </Button>
     </Grid>
 
+    <!-- ═══════════════════ SPLITTER ═══════════════════ -->
+    <GridSplitter Grid.Row="3" Height="5" HorizontalAlignment="Stretch"
+                  Background="#2A4A7C" Cursor="SizeNS" VerticalAlignment="Center"/>
+
+    <!-- ═══════════════════ ACTIVITY LOG ═══════════════════ -->
+    <Border Grid.Row="4" Background="#070F1A" BorderBrush="#1A3050" BorderThickness="0,1,0,0">
+      <Grid>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="26"/>
+          <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Log header bar -->
+        <Border Grid.Row="0" Background="#0C1E35">
+          <Grid Margin="10,0">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+              <Ellipse Width="7" Height="7" Fill="#00C853" VerticalAlignment="Center" Margin="0,0,7,0"/>
+              <TextBlock Text="Activity Log" Foreground="#7AABCC" FontSize="11"
+                         FontWeight="SemiBold" VerticalAlignment="Center"/>
+              <TextBlock x:Name="LogCount" Text="  (0 entries)" Foreground="#4A6A88"
+                         FontSize="10" VerticalAlignment="Center"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
+                        VerticalAlignment="Center">
+              <CheckBox x:Name="LogAutoScroll" Content="Auto-scroll" IsChecked="True"
+                        Foreground="#5A8AAA" FontSize="10" VerticalAlignment="Center"
+                        Margin="0,0,12,0"/>
+              <Button x:Name="BtnClearLog" Content="Clear"
+                      Background="#1A3050" Foreground="#7AABCC"
+                      BorderBrush="#2A4A7C" BorderThickness="1"
+                      Padding="8,2" FontSize="10" Cursor="Hand"/>
+            </StackPanel>
+          </Grid>
+        </Border>
+
+        <!-- Log content (dark terminal style) -->
+        <RichTextBox x:Name="LogBox" Grid.Row="1"
+                     Background="#070F1A" BorderThickness="0"
+                     IsReadOnly="True" IsDocumentEnabled="True"
+                     FontFamily="Consolas,Courier New" FontSize="11.5"
+                     Foreground="#C8D8E8"
+                     VerticalScrollBarVisibility="Auto"
+                     HorizontalScrollBarVisibility="Auto"
+                     Padding="10,4,10,4"/>
+      </Grid>
+    </Border>
+
     <!-- ═══════════════════ FOOTER ═══════════════════ -->
-    <Border Grid.Row="3" Background="#1A2D4A">
+    <Border Grid.Row="5" Background="#0C1E35">
       <TextBlock x:Name="FooterText"
                  Text="ExoMan v1.0  |  Ready"
-                 Foreground="#AAC8E8" FontSize="11"
-                 VerticalAlignment="Center" Margin="20,0"/>
+                 Foreground="#4A7AAA" FontSize="10"
+                 VerticalAlignment="Center" Margin="14,0"/>
     </Border>
   </Grid>
 </Window>
@@ -238,6 +287,26 @@ function Show-MainWindow {
     $btnSharedMB   = $window.FindName("BtnSharedMB")
     $btnUserMB     = $window.FindName("BtnUserMB")
     $footerText    = $window.FindName("FooterText")
+
+    # ── Wire up the shared activity log ──
+    $script:LogBox       = $window.FindName("LogBox")
+    $logCount            = $window.FindName("LogCount")
+    $logAutoScroll       = $window.FindName("LogAutoScroll")
+    $btnClearLog         = $window.FindName("BtnClearLog")
+    $script:LogEntryCount = 0
+
+    # Remove default FlowDocument padding
+    $script:LogBox.Document.PagePadding = [System.Windows.Thickness]::new(0)
+
+    # Update entry count in header whenever Write-ExoLog runs
+    $script:LogCountLabel = $logCount
+    $script:LogAutoScroll = $logAutoScroll
+
+    $btnClearLog.Add_Click({
+        $script:LogBox.Document.Blocks.Clear()
+        $script:LogEntryCount = 0
+        $script:LogCountLabel.Text = "  (0 entries)"
+    })
 
     # ── Helper: update UI to reflect connection state ──
     function Update-ConnectionUI {
@@ -270,6 +339,12 @@ function Show-MainWindow {
     # ── Check if already connected on launch ──
     $initialStatus = Get-ExoManConnectionStatus
     Update-ConnectionUI $initialStatus
+    Write-ExoLog "ExoMan v1.0 started" "Action"
+    if ($initialStatus.Connected) {
+        Write-ExoLog "Already signed in as $($initialStatus.Account)" "Success"
+    } else {
+        Write-ExoLog "Not connected. Click 'Connect to Exchange Online' to sign in." "Info"
+    }
 
     # ── Connect button ──
     $connectBtn.Add_Click({
@@ -277,14 +352,18 @@ function Show-MainWindow {
         $connectBtn.IsEnabled = $false
         $footerText.Text      = "ExoMan v1.0  |  Opening Microsoft 365 login…"
         $window.Cursor        = [System.Windows.Input.Cursors]::Wait
+        Write-ExoLog "Initiating Microsoft 365 browser login..." "Action"
 
         $result = Connect-ExoManGraph
 
         $window.Cursor = $null
         if ($result.Success) {
             Update-ConnectionUI @{ Connected = $true; Account = $result.Account; TenantId = $result.TenantId }
+            Write-ExoLog "Connected successfully as $($result.Account)" "Success"
+            Write-ExoLog "Tenant ID: $($result.TenantId)" "Info"
         } else {
             Update-ConnectionUI @{ Connected = $false }
+            Write-ExoLog "Connection failed: $($result.Error)" "Error"
             [System.Windows.MessageBox]::Show(
                 "Connection failed:`n`n$($result.Error)",
                 "ExoMan – Connection Error",
@@ -297,20 +376,25 @@ function Show-MainWindow {
 
     # ── Disconnect button ──
     $disconnectBtn.Add_Click({
+        Write-ExoLog "Disconnecting from Microsoft Graph..." "Action"
         Disconnect-ExoManGraph
         Update-ConnectionUI @{ Connected = $false }
+        Write-ExoLog "Disconnected." "Info"
     })
 
     # ── Feature tile buttons ──
     $btnDG.Add_Click({
+        Write-ExoLog "Opening Distribution Groups manager..." "Action"
         Show-DistributionGroupsWindow -Owner $window
     })
 
     $btnSharedMB.Add_Click({
+        Write-ExoLog "Opening Shared Mailbox manager..." "Action"
         Show-SharedMailboxWindow -Owner $window
     })
 
     $btnUserMB.Add_Click({
+        Write-ExoLog "Opening User Mailbox manager..." "Action"
         Show-UserMailboxWindow -Owner $window
     })
 
