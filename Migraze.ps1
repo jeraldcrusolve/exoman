@@ -4,9 +4,9 @@
     Migraze v2.0 - Migration Management Platform
 
 .DESCRIPTION
-    A Windows GUI tool for managing mailbox and data migrations.
-    Supports: Google Workspace to M365, M365 Tenant to Tenant Migration.
-    Uses Microsoft Graph PowerShell SDK and Google Admin SDK REST API.
+    A Windows GUI tool for managing cloud-to-cloud migrations.
+    Uses Microsoft Graph PowerShell SDK and Google Workspace APIs.
+    Requires: Microsoft.Graph.Authentication, Microsoft.Graph.Groups, Microsoft.Graph.Users
 
 .NOTES
     Version : 2.0
@@ -61,6 +61,7 @@ try {
         "src\Management\DistributionGroups.ps1",
         "src\Management\SharedMailbox.ps1",
         "src\Management\UserMailbox.ps1",
+        "src\Scenarios\M365-Home.ps1",
         "src\Scenarios\GW-to-M365.ps1",
         "src\Scenarios\M365-to-M365.ps1",
         "src\MainWindow.ps1"
