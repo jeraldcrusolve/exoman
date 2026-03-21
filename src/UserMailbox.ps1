@@ -36,6 +36,10 @@ function Show-UserMailboxWindow {
       <TextBlock Text="Planned: Manage mailbox settings, forwarding, quotas, permissions, and more."
                  FontSize="12" Foreground="#889AAA" HorizontalAlignment="Center"
                  TextAlignment="Center" Margin="40,6,40,0"/>
+      <Button x:Name="BtnClose" Content="← Back to Home"
+              Background="#0078D4" Foreground="White" BorderThickness="0"
+              Padding="20,9" FontSize="13" Cursor="Hand" Margin="0,28,0,0"
+              HorizontalAlignment="Center"/>
     </StackPanel>
   </Grid>
 </Window>
@@ -44,5 +48,6 @@ function Show-UserMailboxWindow {
     $reader = [System.Xml.XmlNodeReader]::new($xaml)
     $window = [Windows.Markup.XamlReader]::Load($reader)
     if ($Owner) { $window.Owner = $Owner }
+    $window.FindName("BtnClose").Add_Click({ $window.Close() })
     $window.ShowDialog() | Out-Null
 }
