@@ -1,4 +1,4 @@
-# MainWindow.ps1 - ExoMan v1.0 main application window
+﻿# MainWindow.ps1 - ExoMan v1.0 main application window
 
 function Show-MainWindow {
 
