@@ -137,8 +137,14 @@ function Show-DistributionGroupsWindow {
           <Button x:Name="NavReadProps"     Content="📋   Read Current Properties"    Style="{StaticResource NavBtn}" Margin="0,3,0,0"/>
         </StackPanel>
 
-        <Border Grid.Row="2" Padding="14,10" BorderBrush="#1A3A5C" BorderThickness="0,1,0,0">
-          <TextBlock Text="Graph PowerShell SDK" Foreground="#4A7FAE" FontSize="10"/>
+        <Border Grid.Row="2" BorderBrush="#1A3A5C" BorderThickness="0,1,0,0">
+          <StackPanel Margin="8,8,8,10">
+            <Button x:Name="NavClose" Content="← Back to Home"
+                    Style="{StaticResource NavBtn}"
+                    Foreground="#FF8A80" FontSize="12"/>
+            <TextBlock Text="Graph PowerShell SDK" Foreground="#4A7FAE"
+                       FontSize="10" Margin="6,6,0,0"/>
+          </StackPanel>
         </Border>
       </Grid>
     </Border>
@@ -347,6 +353,7 @@ function Show-DistributionGroupsWindow {
     $navAddMembers    = $window.FindName("NavAddMembers")
     $navRemoveMembers = $window.FindName("NavRemoveMembers")
     $navReadProps     = $window.FindName("NavReadProps")
+    $navClose         = $window.FindName("NavClose")
 
     $pCreate        = $window.FindName("PanelCreate")
     $pUpdate        = $window.FindName("PanelUpdate")
@@ -376,6 +383,7 @@ function Show-DistributionGroupsWindow {
     $navAddMembers.Add_Click({    Switch-DGPanel 2 })
     $navRemoveMembers.Add_Click({ Switch-DGPanel 3 })
     $navReadProps.Add_Click({     Switch-DGPanel 4 })
+    $navClose.Add_Click({         Write-ExoLog "Closed Distribution Groups window." "Info"; $window.Close() })
 
     # ─────────────────────────────────────────────────────
     # Helper: set status text with colour
